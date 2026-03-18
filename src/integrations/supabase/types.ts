@@ -14,7 +14,114 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      card_progress: {
+        Row: {
+          card_id: number
+          created_at: string
+          difficulty: string
+          id: string
+          last_reviewed_at: string
+          times_reviewed: number
+          user_id: string
+        }
+        Insert: {
+          card_id: number
+          created_at?: string
+          difficulty: string
+          id?: string
+          last_reviewed_at?: string
+          times_reviewed?: number
+          user_id: string
+        }
+        Update: {
+          card_id?: number
+          created_at?: string
+          difficulty?: string
+          id?: string
+          last_reviewed_at?: string
+          times_reviewed?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          best_streak: number
+          cards_reviewed: number
+          created_at: string
+          current_streak: number
+          display_name: string
+          id: string
+          last_study_date: string | null
+          quizzes_completed: number
+          total_points: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          best_streak?: number
+          cards_reviewed?: number
+          created_at?: string
+          current_streak?: number
+          display_name?: string
+          id?: string
+          last_study_date?: string | null
+          quizzes_completed?: number
+          total_points?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          best_streak?: number
+          cards_reviewed?: number
+          created_at?: string
+          current_streak?: number
+          display_name?: string
+          id?: string
+          last_study_date?: string | null
+          quizzes_completed?: number
+          total_points?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      quiz_results: {
+        Row: {
+          created_at: string
+          id: string
+          module: string | null
+          percentage: number
+          points_earned: number
+          score: number
+          total: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          module?: string | null
+          percentage: number
+          points_earned?: number
+          score: number
+          total: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          module?: string | null
+          percentage?: number
+          points_earned?: number
+          score?: number
+          total?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
