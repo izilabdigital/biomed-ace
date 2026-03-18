@@ -41,16 +41,8 @@ export function FlashcardView({ cards, userId, onProgressUpdate }: FlashcardView
       { onConflict: 'user_id,card_id' }
     );
 
-    // Update profile stats
-    const today = new Date().toISOString().split('T')[0];
-    await supabase.rpc('increment_cards_reviewed' as never, { _user_id: userId, _today: today } as never).catch(() => {
-      // Fallback: direct update
-      supabase.from('profiles')
-        .update({ cards_reviewed: undefined as any }) // will be handled by trigger
-        .eq('user_id', userId);
-    });
-
     // Simple increment via direct update
+    const today = new Date().toISOString().split('T')[0];
     const { data: prof } = await supabase.from('profiles').select('cards_reviewed, total_points, current_streak, best_streak, last_study_date').eq('user_id', userId).single();
     if (prof) {
       const points = rating === 'easy' ? 10 : rating === 'medium' ? 20 : 30;
