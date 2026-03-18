@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, BookOpen, Brain, Trophy, ArrowLeft, Menu, X } from 'lucide-react';
+import { Home, BookOpen, Brain, Trophy, ArrowLeft, Menu, X, LogOut } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import Auth from './Auth';
 import { Dashboard } from '@/components/Dashboard';
 import { FlashcardView } from '@/components/FlashcardView';
 import { QuizView } from '@/components/QuizView';
@@ -17,15 +19,25 @@ const navItems = [
 ];
 
 const Index = () => {
+  const { user, profile, loading, signOut, refreshProfile } = useAuth();
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [moduleFilter, setModuleFilter] = useState<string | undefined>();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [stats, setStats] = useState({ cardsReviewed: 0, quizScore: 85, streak: 3 });
 
   const filteredCards = useMemo(() => {
     if (!moduleFilter) return flashcards;
     return flashcards.filter(c => c.module === moduleFilter);
   }, [moduleFilter]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-pulse text-muted-foreground">Carregando...</div>
+      </div>
+    );
+  }
+
+  if (!user) return <Auth />;
 
   const handleNavigate = (view: string, module?: string) => {
     setCurrentView(view as View);
@@ -33,15 +45,11 @@ const Index = () => {
     setMobileMenuOpen(false);
   };
 
-  const handleRate = (_cardId: number, _rating: 'easy' | 'medium' | 'hard') => {
-    setStats(prev => ({ ...prev, cardsReviewed: prev.cardsReviewed + 1 }));
-  };
-
-  const handleQuizComplete = (score: number, total: number) => {
-    setStats(prev => ({
-      ...prev,
-      quizScore: Math.round((score / total) * 100),
-    }));
+  const stats = {
+    cardsReviewed: profile?.cards_reviewed ?? 0,
+    quizScore: 0,
+    streak: profile?.current_streak ?? 0,
+    totalPoints: profile?.total_points ?? 0,
   };
 
   const renderView = () => {
@@ -49,17 +57,16 @@ const Index = () => {
       case 'dashboard':
         return <Dashboard onNavigate={handleNavigate} stats={stats} />;
       case 'flashcards':
-        return <FlashcardView cards={filteredCards} onRate={handleRate} />;
+        return <FlashcardView cards={filteredCards} userId={user.id} onProgressUpdate={refreshProfile} />;
       case 'quiz':
-        return <QuizView moduleFilter={moduleFilter} onComplete={handleQuizComplete} />;
+        return <QuizView moduleFilter={moduleFilter} userId={user.id} onProgressUpdate={refreshProfile} />;
       case 'leaderboard':
-        return <Leaderboard />;
+        return <Leaderboard currentUserId={user.id} />;
     }
   };
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Top Navigation */}
       <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-xl shadow-card">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -76,7 +83,6 @@ const Index = () => {
             </h1>
           </div>
 
-          {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-1">
             {navItems.map(item => (
               <button
@@ -92,9 +98,11 @@ const Index = () => {
                 {item.label}
               </button>
             ))}
+            <button onClick={signOut} className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground ml-2" title="Sair">
+              <LogOut className="w-4 h-4" />
+            </button>
           </nav>
 
-          {/* Mobile menu toggle */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="md:hidden p-1.5 rounded-lg hover:bg-secondary"
@@ -103,7 +111,6 @@ const Index = () => {
           </button>
         </div>
 
-        {/* Mobile nav dropdown */}
         <AnimatePresence>
           {mobileMenuOpen && (
             <motion.div
@@ -127,13 +134,19 @@ const Index = () => {
                     {item.label}
                   </button>
                 ))}
+                <button
+                  onClick={signOut}
+                  className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-destructive hover:bg-secondary transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sair
+                </button>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
       </header>
 
-      {/* Module filter indicator */}
       {moduleFilter && currentView === 'flashcards' && (
         <div className="max-w-5xl mx-auto px-4 pt-4">
           <div className="flex items-center gap-2">
@@ -141,17 +154,13 @@ const Index = () => {
             <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
               {moduleFilter}
             </span>
-            <button
-              onClick={() => setModuleFilter(undefined)}
-              className="text-xs text-muted-foreground hover:text-foreground"
-            >
+            <button onClick={() => setModuleFilter(undefined)} className="text-xs text-muted-foreground hover:text-foreground">
               × Limpar
             </button>
           </div>
         </div>
       )}
 
-      {/* Content */}
       <main className="max-w-5xl mx-auto px-4 py-8">
         <AnimatePresence mode="wait">
           <motion.div
