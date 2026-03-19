@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { Mail, Lock, User, ArrowRight } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Auth() {
   const { signIn, signUp } = useAuth();
@@ -12,6 +13,22 @@ export default function Auth() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
+  const [forgotMode, setForgotMode] = useState(false);
+  const [forgotLoading, setForgotLoading] = useState(false);
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    if (!email) { setError('Informe seu email'); return; }
+    setForgotLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) setError(error.message);
+    else setSuccess('Email de recuperação enviado! Verifique sua caixa de entrada.');
+    setForgotLoading(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,7 +64,7 @@ export default function Auth() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-card rounded-2xl shadow-card p-6 space-y-4">
+        <form onSubmit={forgotMode ? handleForgotPassword : handleSubmit} className="bg-card rounded-2xl shadow-card p-6 space-y-4">
           {!isLogin && (
             <div className="relative">
               <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -89,22 +106,37 @@ export default function Auth() {
           {error && <p className="text-sm text-destructive">{error}</p>}
           {success && <p className="text-sm text-accent">{success}</p>}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-medium text-sm flex items-center justify-center gap-2 hover:shadow-card-hover transition-all disabled:opacity-50"
-          >
-            {loading ? 'Aguarde...' : isLogin ? 'Entrar' : 'Criar conta'}
-            <ArrowRight className="w-4 h-4" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => { setIsLogin(!isLogin); setError(''); setSuccess(''); }}
-            className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            {isLogin ? 'Não tem conta? Criar uma' : 'Já tem conta? Entrar'}
-          </button>
+          {forgotMode ? (
+            <>
+              <button type="submit" disabled={forgotLoading}
+                className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-medium text-sm flex items-center justify-center gap-2 hover:shadow-card-hover transition-all disabled:opacity-50">
+                {forgotLoading ? 'Aguarde...' : 'Enviar email de recuperação'}
+                <ArrowRight className="w-4 h-4" />
+              </button>
+              <button type="button" onClick={() => { setForgotMode(false); setError(''); setSuccess(''); }}
+                className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Voltar ao login
+              </button>
+            </>
+          ) : (
+            <>
+              <button type="submit" disabled={loading}
+                className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-medium text-sm flex items-center justify-center gap-2 hover:shadow-card-hover transition-all disabled:opacity-50">
+                {loading ? 'Aguarde...' : isLogin ? 'Entrar' : 'Criar conta'}
+                <ArrowRight className="w-4 h-4" />
+              </button>
+              {isLogin && (
+                <button type="button" onClick={() => { setForgotMode(true); setError(''); setSuccess(''); }}
+                  className="w-full text-center text-xs text-muted-foreground hover:text-primary transition-colors">
+                  Esqueceu a senha?
+                </button>
+              )}
+              <button type="button" onClick={() => { setIsLogin(!isLogin); setError(''); setSuccess(''); setForgotMode(false); }}
+                className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors">
+                {isLogin ? 'Não tem conta? Criar uma' : 'Já tem conta? Entrar'}
+              </button>
+            </>
+          )}
         </form>
       </motion.div>
     </div>

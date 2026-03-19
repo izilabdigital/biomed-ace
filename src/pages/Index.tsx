@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, BookOpen, Brain, Trophy, ArrowLeft, Menu, X, LogOut, RefreshCw } from 'lucide-react';
+import { Home, BookOpen, Brain, Trophy, ArrowLeft, Menu, X, LogOut, RefreshCw, Settings } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { ProfileSettings } from '@/components/ProfileSettings';
 import Auth from './Auth';
 import { Dashboard } from '@/components/Dashboard';
 import { FlashcardView } from '@/components/FlashcardView';
@@ -25,6 +26,7 @@ const Index = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [moduleFilter, setModuleFilter] = useState<string | undefined>();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
 
   const filteredCards = useMemo(() => {
     if (!moduleFilter) return flashcards;
@@ -102,7 +104,10 @@ const Index = () => {
                 {item.label}
               </button>
             ))}
-            <button onClick={signOut} className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground ml-2" title="Sair">
+            <button onClick={() => setShowProfile(true)} className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground" title="Perfil">
+              <Settings className="w-4 h-4" />
+            </button>
+            <button onClick={signOut} className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground" title="Sair">
               <LogOut className="w-4 h-4" />
             </button>
           </nav>
@@ -138,6 +143,13 @@ const Index = () => {
                     {item.label}
                   </button>
                 ))}
+                <button
+                  onClick={() => { setShowProfile(true); setMobileMenuOpen(false); }}
+                  className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                >
+                  <Settings className="w-4 h-4" />
+                  Configurações
+                </button>
                 <button
                   onClick={signOut}
                   className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-destructive hover:bg-secondary transition-colors"
@@ -178,6 +190,10 @@ const Index = () => {
           </motion.div>
         </AnimatePresence>
       </main>
+
+      <AnimatePresence>
+        {showProfile && <ProfileSettings onClose={() => setShowProfile(false)} />}
+      </AnimatePresence>
     </div>
   );
 };
