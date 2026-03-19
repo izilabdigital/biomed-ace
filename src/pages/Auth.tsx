@@ -106,22 +106,37 @@ export default function Auth() {
           {error && <p className="text-sm text-destructive">{error}</p>}
           {success && <p className="text-sm text-accent">{success}</p>}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-medium text-sm flex items-center justify-center gap-2 hover:shadow-card-hover transition-all disabled:opacity-50"
-          >
-            {loading ? 'Aguarde...' : isLogin ? 'Entrar' : 'Criar conta'}
-            <ArrowRight className="w-4 h-4" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => { setIsLogin(!isLogin); setError(''); setSuccess(''); }}
-            className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            {isLogin ? 'Não tem conta? Criar uma' : 'Já tem conta? Entrar'}
-          </button>
+          {forgotMode ? (
+            <>
+              <button type="submit" disabled={forgotLoading}
+                className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-medium text-sm flex items-center justify-center gap-2 hover:shadow-card-hover transition-all disabled:opacity-50">
+                {forgotLoading ? 'Aguarde...' : 'Enviar email de recuperação'}
+                <ArrowRight className="w-4 h-4" />
+              </button>
+              <button type="button" onClick={() => { setForgotMode(false); setError(''); setSuccess(''); }}
+                className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Voltar ao login
+              </button>
+            </>
+          ) : (
+            <>
+              <button type="submit" disabled={loading}
+                className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-medium text-sm flex items-center justify-center gap-2 hover:shadow-card-hover transition-all disabled:opacity-50">
+                {loading ? 'Aguarde...' : isLogin ? 'Entrar' : 'Criar conta'}
+                <ArrowRight className="w-4 h-4" />
+              </button>
+              {isLogin && (
+                <button type="button" onClick={() => { setForgotMode(true); setError(''); setSuccess(''); }}
+                  className="w-full text-center text-xs text-muted-foreground hover:text-primary transition-colors">
+                  Esqueceu a senha?
+                </button>
+              )}
+              <button type="button" onClick={() => { setIsLogin(!isLogin); setError(''); setSuccess(''); setForgotMode(false); }}
+                className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors">
+                {isLogin ? 'Não tem conta? Criar uma' : 'Já tem conta? Entrar'}
+              </button>
+            </>
+          )}
         </form>
       </motion.div>
     </div>
