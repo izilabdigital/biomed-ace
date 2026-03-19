@@ -26,6 +26,7 @@ const Index = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [moduleFilter, setModuleFilter] = useState<string | undefined>();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
 
   const filteredCards = useMemo(() => {
     if (!moduleFilter) return flashcards;
