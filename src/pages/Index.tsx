@@ -190,6 +190,10 @@ const Index = () => {
           </motion.div>
         </AnimatePresence>
       </main>
+
+      <AnimatePresence>
+        {showProfile && <ProfileSettings onClose={() => setShowProfile(false)} />}
+      </AnimatePresence>
     </div>
   );
 };
