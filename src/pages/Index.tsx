@@ -15,6 +15,7 @@ type View = 'dashboard' | 'flashcards' | 'quiz' | 'leaderboard' | 'spaced';
 const navItems = [
   { id: 'dashboard' as View, label: 'Dashboard', icon: Home },
   { id: 'flashcards' as View, label: 'Flashcards', icon: BookOpen },
+  { id: 'spaced' as View, label: 'Revisão SM-2', icon: RefreshCw },
   { id: 'quiz' as View, label: 'Quiz', icon: Brain },
   { id: 'leaderboard' as View, label: 'Ranking', icon: Trophy },
 ];
