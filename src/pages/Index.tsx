@@ -104,7 +104,10 @@ const Index = () => {
                 {item.label}
               </button>
             ))}
-            <button onClick={signOut} className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground ml-2" title="Sair">
+            <button onClick={() => setShowProfile(true)} className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground" title="Perfil">
+              <Settings className="w-4 h-4" />
+            </button>
+            <button onClick={signOut} className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground" title="Sair">
               <LogOut className="w-4 h-4" />
             </button>
           </nav>
