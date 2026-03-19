@@ -60,6 +60,8 @@ const Index = () => {
         return <Dashboard onNavigate={handleNavigate} stats={stats} />;
       case 'flashcards':
         return <FlashcardView cards={filteredCards} userId={user.id} onProgressUpdate={refreshProfile} />;
+      case 'spaced':
+        return <SpacedRepetitionView userId={user.id} onProgressUpdate={refreshProfile} />;
       case 'quiz':
         return <QuizView moduleFilter={moduleFilter} userId={user.id} onProgressUpdate={refreshProfile} />;
       case 'leaderboard':
