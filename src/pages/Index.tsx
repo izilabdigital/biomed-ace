@@ -1,15 +1,16 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, BookOpen, Brain, Trophy, ArrowLeft, Menu, X, LogOut } from 'lucide-react';
+import { Home, BookOpen, Brain, Trophy, ArrowLeft, Menu, X, LogOut, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import Auth from './Auth';
 import { Dashboard } from '@/components/Dashboard';
 import { FlashcardView } from '@/components/FlashcardView';
 import { QuizView } from '@/components/QuizView';
 import { Leaderboard } from '@/components/Leaderboard';
+import { SpacedRepetitionView } from '@/components/SpacedRepetitionView';
 import { flashcards } from '@/data/flashcards';
 
-type View = 'dashboard' | 'flashcards' | 'quiz' | 'leaderboard';
+type View = 'dashboard' | 'flashcards' | 'quiz' | 'leaderboard' | 'spaced';
 
 const navItems = [
   { id: 'dashboard' as View, label: 'Dashboard', icon: Home },
