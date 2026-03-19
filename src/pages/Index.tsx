@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, BookOpen, Brain, Trophy, ArrowLeft, Menu, X, LogOut, RefreshCw } from 'lucide-react';
+import { Home, BookOpen, Brain, Trophy, ArrowLeft, Menu, X, LogOut, RefreshCw, Settings } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { ProfileSettings } from '@/components/ProfileSettings';
 import Auth from './Auth';
 import { Dashboard } from '@/components/Dashboard';
 import { FlashcardView } from '@/components/FlashcardView';
