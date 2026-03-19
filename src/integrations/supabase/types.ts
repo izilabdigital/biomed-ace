@@ -19,8 +19,12 @@ export type Database = {
           card_id: number
           created_at: string
           difficulty: string
+          easiness_factor: number
           id: string
+          interval_days: number
           last_reviewed_at: string
+          next_review_at: string
+          repetitions: number
           times_reviewed: number
           user_id: string
         }
@@ -28,8 +32,12 @@ export type Database = {
           card_id: number
           created_at?: string
           difficulty: string
+          easiness_factor?: number
           id?: string
+          interval_days?: number
           last_reviewed_at?: string
+          next_review_at?: string
+          repetitions?: number
           times_reviewed?: number
           user_id: string
         }
@@ -37,8 +45,12 @@ export type Database = {
           card_id?: number
           created_at?: string
           difficulty?: string
+          easiness_factor?: number
           id?: string
+          interval_days?: number
           last_reviewed_at?: string
+          next_review_at?: string
+          repetitions?: number
           times_reviewed?: number
           user_id?: string
         }

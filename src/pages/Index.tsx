@@ -1,19 +1,21 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, BookOpen, Brain, Trophy, ArrowLeft, Menu, X, LogOut } from 'lucide-react';
+import { Home, BookOpen, Brain, Trophy, ArrowLeft, Menu, X, LogOut, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import Auth from './Auth';
 import { Dashboard } from '@/components/Dashboard';
 import { FlashcardView } from '@/components/FlashcardView';
 import { QuizView } from '@/components/QuizView';
 import { Leaderboard } from '@/components/Leaderboard';
+import { SpacedRepetitionView } from '@/components/SpacedRepetitionView';
 import { flashcards } from '@/data/flashcards';
 
-type View = 'dashboard' | 'flashcards' | 'quiz' | 'leaderboard';
+type View = 'dashboard' | 'flashcards' | 'quiz' | 'leaderboard' | 'spaced';
 
 const navItems = [
   { id: 'dashboard' as View, label: 'Dashboard', icon: Home },
   { id: 'flashcards' as View, label: 'Flashcards', icon: BookOpen },
+  { id: 'spaced' as View, label: 'Revisão SM-2', icon: RefreshCw },
   { id: 'quiz' as View, label: 'Quiz', icon: Brain },
   { id: 'leaderboard' as View, label: 'Ranking', icon: Trophy },
 ];
@@ -58,6 +60,8 @@ const Index = () => {
         return <Dashboard onNavigate={handleNavigate} stats={stats} />;
       case 'flashcards':
         return <FlashcardView cards={filteredCards} userId={user.id} onProgressUpdate={refreshProfile} />;
+      case 'spaced':
+        return <SpacedRepetitionView userId={user.id} onProgressUpdate={refreshProfile} />;
       case 'quiz':
         return <QuizView moduleFilter={moduleFilter} userId={user.id} onProgressUpdate={refreshProfile} />;
       case 'leaderboard':
