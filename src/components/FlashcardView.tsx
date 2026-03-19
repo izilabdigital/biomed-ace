@@ -36,9 +36,30 @@ export function FlashcardView({ cards, userId, onProgressUpdate }: FlashcardView
   };
 
   const handleRate = async (rating: 'easy' | 'medium' | 'hard') => {
-    // Upsert card progress
+    const quality = ratingToQuality(rating);
+    // Fetch existing progress for SM-2
+    const { data: existing } = await supabase
+      .from('card_progress')
+      .select('easiness_factor, interval_days, repetitions')
+      .eq('user_id', userId)
+      .eq('card_id', card.id)
+      .maybeSingle();
+
+    const prev = existing || { easiness_factor: 2.5, interval_days: 0, repetitions: 0 };
+    const newState = sm2(quality, prev);
+
+    // Upsert card progress with SM-2 fields
     await supabase.from('card_progress').upsert(
-      { user_id: userId, card_id: card.id, difficulty: rating, last_reviewed_at: new Date().toISOString() },
+      {
+        user_id: userId,
+        card_id: card.id,
+        difficulty: rating,
+        last_reviewed_at: new Date().toISOString(),
+        easiness_factor: newState.easiness_factor,
+        interval_days: newState.interval_days,
+        repetitions: newState.repetitions,
+        next_review_at: newState.next_review_at,
+      },
       { onConflict: 'user_id,card_id' }
     );
 
