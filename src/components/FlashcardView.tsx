@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Flashcard } from '@/data/flashcards';
 import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { sm2, ratingToQuality } from '@/lib/sm2';
 
 interface FlashcardViewProps {
   cards: Flashcard[];
