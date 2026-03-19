@@ -144,6 +144,13 @@ const Index = () => {
                   </button>
                 ))}
                 <button
+                  onClick={() => { setShowProfile(true); setMobileMenuOpen(false); }}
+                  className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                >
+                  <Settings className="w-4 h-4" />
+                  Configurações
+                </button>
+                <button
                   onClick={signOut}
                   className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-destructive hover:bg-secondary transition-colors"
                 >
