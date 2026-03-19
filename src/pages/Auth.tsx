@@ -64,7 +64,7 @@ export default function Auth() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-card rounded-2xl shadow-card p-6 space-y-4">
+        <form onSubmit={forgotMode ? handleForgotPassword : handleSubmit} className="bg-card rounded-2xl shadow-card p-6 space-y-4">
           {!isLogin && (
             <div className="relative">
               <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
