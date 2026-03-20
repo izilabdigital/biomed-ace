@@ -5,12 +5,14 @@ import moduleAnatomia from '@/assets/module-anatomia.jpg';
 import moduleEsqueletico from '@/assets/module-esqueletico.jpg';
 import moduleOrganicos from '@/assets/module-organicos.jpg';
 import moduleClinica from '@/assets/module-clinica.jpg';
+import moduleCelular from '@/assets/module-celular.jpg';
 
 const moduleImages: Record<string, string> = {
   'Introdução à Anatomia': moduleAnatomia,
   'Sistema Esquelético': moduleEsqueletico,
   'Sistemas Orgânicos': moduleOrganicos,
   'Biomedicina Clínica': moduleClinica,
+  'Biologia Celular': moduleCelular,
 };
 
 interface DashboardProps {
