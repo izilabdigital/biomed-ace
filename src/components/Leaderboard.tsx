@@ -21,6 +21,7 @@ interface LeaderboardProps {
 export function Leaderboard({ currentUserId }: LeaderboardProps) {
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewProfileId, setViewProfileId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
