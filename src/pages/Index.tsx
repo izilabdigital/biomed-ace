@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, BookOpen, Brain, Trophy, ArrowLeft, Menu, X, LogOut, RefreshCw, Settings, GraduationCap, Moon, Sun } from 'lucide-react';
+import { Home, BookOpen, Brain, Trophy, ArrowLeft, Menu, X, LogOut, RefreshCw, Settings, GraduationCap, Moon, Sun, Users } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { ProfileSettings } from '@/components/ProfileSettings';
 import Auth from './Auth';
