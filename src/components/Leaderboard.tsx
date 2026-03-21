@@ -11,6 +11,7 @@ interface Player {
   cards: number;
   streak: number;
   isCurrentUser: boolean;
+  userId: string;
 }
 
 interface LeaderboardProps {
