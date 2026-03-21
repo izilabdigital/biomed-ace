@@ -163,6 +163,13 @@ const Index = () => {
                   </button>
                 ))}
                 <button
+                  onClick={() => setDarkMode(d => !d)}
+                  className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                >
+                  {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                  {darkMode ? 'Modo Claro' : 'Modo Escuro'}
+                </button>
+                <button
                   onClick={() => { setShowProfile(true); setMobileMenuOpen(false); }}
                   className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
                 >
