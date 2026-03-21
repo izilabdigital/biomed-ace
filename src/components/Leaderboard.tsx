@@ -110,6 +110,12 @@ export function Leaderboard({ currentUserId }: LeaderboardProps) {
           ))}
         </div>
       </div>
+
+      <AnimatePresence>
+        {viewProfileId && (
+          <UserProfile userId={viewProfileId} currentUserId={currentUserId} onClose={() => setViewProfileId(null)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
