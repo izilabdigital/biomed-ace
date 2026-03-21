@@ -120,6 +120,9 @@ const Index = () => {
                 {item.label}
               </button>
             ))}
+            <button onClick={() => setDarkMode(d => !d)} className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground" title={darkMode ? 'Modo claro' : 'Modo escuro'}>
+              {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
             <button onClick={() => setShowProfile(true)} className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground" title="Perfil">
               <Settings className="w-4 h-4" />
             </button>
