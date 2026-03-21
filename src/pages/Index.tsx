@@ -13,7 +13,7 @@ import { ExamSimulator } from '@/components/ExamSimulator';
 import { FriendsView } from '@/components/FriendsView';
 import { flashcards } from '@/data/flashcards';
 
-type View = 'dashboard' | 'flashcards' | 'quiz' | 'leaderboard' | 'spaced' | 'exam';
+type View = 'dashboard' | 'flashcards' | 'quiz' | 'leaderboard' | 'spaced' | 'exam' | 'friends';
 
 const navItems = [
   { id: 'dashboard' as View, label: 'Dashboard', icon: Home },
