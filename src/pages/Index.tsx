@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, BookOpen, Brain, Trophy, ArrowLeft, Menu, X, LogOut, RefreshCw, Settings, GraduationCap } from 'lucide-react';
+import { Home, BookOpen, Brain, Trophy, ArrowLeft, Menu, X, LogOut, RefreshCw, Settings, GraduationCap, Moon, Sun } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { ProfileSettings } from '@/components/ProfileSettings';
 import Auth from './Auth';
@@ -29,6 +29,18 @@ const Index = () => {
   const [moduleFilter, setModuleFilter] = useState<string | undefined>();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('biocore-theme') === 'dark' ||
+        (!localStorage.getItem('biocore-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', darkMode);
+    localStorage.setItem('biocore-theme', darkMode ? 'dark' : 'light');
+  }, [darkMode]);
 
   const filteredCards = useMemo(() => {
     if (!moduleFilter) return flashcards;
@@ -108,6 +120,9 @@ const Index = () => {
                 {item.label}
               </button>
             ))}
+            <button onClick={() => setDarkMode(d => !d)} className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground" title={darkMode ? 'Modo claro' : 'Modo escuro'}>
+              {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
             <button onClick={() => setShowProfile(true)} className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground" title="Perfil">
               <Settings className="w-4 h-4" />
             </button>
@@ -147,6 +162,13 @@ const Index = () => {
                     {item.label}
                   </button>
                 ))}
+                <button
+                  onClick={() => setDarkMode(d => !d)}
+                  className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                >
+                  {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                  {darkMode ? 'Modo Claro' : 'Modo Escuro'}
+                </button>
                 <button
                   onClick={() => { setShowProfile(true); setMobileMenuOpen(false); }}
                   className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
