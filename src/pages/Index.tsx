@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, BookOpen, Brain, Trophy, ArrowLeft, Menu, X, LogOut, RefreshCw, Settings } from 'lucide-react';
+import { Home, BookOpen, Brain, Trophy, ArrowLeft, Menu, X, LogOut, RefreshCw, Settings, GraduationCap } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { ProfileSettings } from '@/components/ProfileSettings';
 import Auth from './Auth';
@@ -9,15 +9,17 @@ import { FlashcardView } from '@/components/FlashcardView';
 import { QuizView } from '@/components/QuizView';
 import { Leaderboard } from '@/components/Leaderboard';
 import { SpacedRepetitionView } from '@/components/SpacedRepetitionView';
+import { ExamSimulator } from '@/components/ExamSimulator';
 import { flashcards } from '@/data/flashcards';
 
-type View = 'dashboard' | 'flashcards' | 'quiz' | 'leaderboard' | 'spaced';
+type View = 'dashboard' | 'flashcards' | 'quiz' | 'leaderboard' | 'spaced' | 'exam';
 
 const navItems = [
   { id: 'dashboard' as View, label: 'Dashboard', icon: Home },
   { id: 'flashcards' as View, label: 'Flashcards', icon: BookOpen },
   { id: 'spaced' as View, label: 'Revisão SM-2', icon: RefreshCw },
   { id: 'quiz' as View, label: 'Quiz', icon: Brain },
+  { id: 'exam' as View, label: 'Prova', icon: GraduationCap },
   { id: 'leaderboard' as View, label: 'Ranking', icon: Trophy },
 ];
 
@@ -66,6 +68,8 @@ const Index = () => {
         return <SpacedRepetitionView userId={user.id} onProgressUpdate={refreshProfile} />;
       case 'quiz':
         return <QuizView moduleFilter={moduleFilter} userId={user.id} onProgressUpdate={refreshProfile} />;
+      case 'exam':
+        return <ExamSimulator moduleFilter={moduleFilter} userId={user.id} onProgressUpdate={refreshProfile} />;
       case 'leaderboard':
         return <Leaderboard currentUserId={user.id} />;
     }
