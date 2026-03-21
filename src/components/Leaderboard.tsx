@@ -82,7 +82,8 @@ export function Leaderboard({ currentUserId }: LeaderboardProps) {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.05 }}
-              className={`flex items-center gap-4 px-6 py-4 transition-colors ${
+              onClick={() => setViewProfileId(player.userId)}
+              className={`flex items-center gap-4 px-6 py-4 transition-colors cursor-pointer ${
                 player.isCurrentUser ? 'bg-primary/[0.08]' : player.rank <= 3 ? 'bg-primary/[0.03]' : 'hover:bg-secondary/50'
               }`}
             >
