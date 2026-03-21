@@ -21,6 +21,7 @@ const navItems = [
   { id: 'spaced' as View, label: 'Revisão SM-2', icon: RefreshCw },
   { id: 'quiz' as View, label: 'Quiz', icon: Brain },
   { id: 'exam' as View, label: 'Prova', icon: GraduationCap },
+  { id: 'friends' as View, label: 'Amigos', icon: Users },
   { id: 'leaderboard' as View, label: 'Ranking', icon: Trophy },
 ];
 
