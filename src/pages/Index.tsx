@@ -10,6 +10,7 @@ import { QuizView } from '@/components/QuizView';
 import { Leaderboard } from '@/components/Leaderboard';
 import { SpacedRepetitionView } from '@/components/SpacedRepetitionView';
 import { ExamSimulator } from '@/components/ExamSimulator';
+import { FriendsView } from '@/components/FriendsView';
 import { flashcards } from '@/data/flashcards';
 
 type View = 'dashboard' | 'flashcards' | 'quiz' | 'leaderboard' | 'spaced' | 'exam';
