@@ -19,6 +19,7 @@ const navItems = [
   { id: 'flashcards' as View, label: 'Flashcards', icon: BookOpen },
   { id: 'spaced' as View, label: 'Revisão SM-2', icon: RefreshCw },
   { id: 'quiz' as View, label: 'Quiz', icon: Brain },
+  { id: 'exam' as View, label: 'Prova', icon: GraduationCap },
   { id: 'leaderboard' as View, label: 'Ranking', icon: Trophy },
 ];
 
