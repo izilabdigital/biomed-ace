@@ -68,6 +68,8 @@ const Index = () => {
         return <SpacedRepetitionView userId={user.id} onProgressUpdate={refreshProfile} />;
       case 'quiz':
         return <QuizView moduleFilter={moduleFilter} userId={user.id} onProgressUpdate={refreshProfile} />;
+      case 'exam':
+        return <ExamSimulator moduleFilter={moduleFilter} userId={user.id} onProgressUpdate={refreshProfile} />;
       case 'leaderboard':
         return <Leaderboard currentUserId={user.id} />;
     }
