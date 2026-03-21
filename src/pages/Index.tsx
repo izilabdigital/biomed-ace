@@ -9,9 +9,10 @@ import { FlashcardView } from '@/components/FlashcardView';
 import { QuizView } from '@/components/QuizView';
 import { Leaderboard } from '@/components/Leaderboard';
 import { SpacedRepetitionView } from '@/components/SpacedRepetitionView';
+import { ExamSimulator } from '@/components/ExamSimulator';
 import { flashcards } from '@/data/flashcards';
 
-type View = 'dashboard' | 'flashcards' | 'quiz' | 'leaderboard' | 'spaced';
+type View = 'dashboard' | 'flashcards' | 'quiz' | 'leaderboard' | 'spaced' | 'exam';
 
 const navItems = [
   { id: 'dashboard' as View, label: 'Dashboard', icon: Home },
