@@ -39,6 +39,7 @@ export function Leaderboard({ currentUserId }: LeaderboardProps) {
           cards: p.cards_reviewed,
           streak: p.current_streak,
           isCurrentUser: p.user_id === currentUserId,
+          userId: p.user_id,
         })));
       }
       setLoading(false);
