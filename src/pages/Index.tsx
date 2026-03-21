@@ -84,6 +84,8 @@ const Index = () => {
         return <QuizView moduleFilter={moduleFilter} userId={user.id} onProgressUpdate={refreshProfile} />;
       case 'exam':
         return <ExamSimulator moduleFilter={moduleFilter} userId={user.id} onProgressUpdate={refreshProfile} />;
+      case 'friends':
+        return <FriendsView currentUserId={user.id} />;
       case 'leaderboard':
         return <Leaderboard currentUserId={user.id} />;
     }
