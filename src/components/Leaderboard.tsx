@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Medal, Award } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { UserProfile } from './UserProfile';
 
 interface Player {
   rank: number;
@@ -10,6 +11,7 @@ interface Player {
   cards: number;
   streak: number;
   isCurrentUser: boolean;
+  userId: string;
 }
 
 interface LeaderboardProps {
@@ -19,6 +21,7 @@ interface LeaderboardProps {
 export function Leaderboard({ currentUserId }: LeaderboardProps) {
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewProfileId, setViewProfileId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
@@ -36,6 +39,7 @@ export function Leaderboard({ currentUserId }: LeaderboardProps) {
           cards: p.cards_reviewed,
           streak: p.current_streak,
           isCurrentUser: p.user_id === currentUserId,
+          userId: p.user_id,
         })));
       }
       setLoading(false);
@@ -78,7 +82,8 @@ export function Leaderboard({ currentUserId }: LeaderboardProps) {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.05 }}
-              className={`flex items-center gap-4 px-6 py-4 transition-colors ${
+              onClick={() => setViewProfileId(player.userId)}
+              className={`flex items-center gap-4 px-6 py-4 transition-colors cursor-pointer ${
                 player.isCurrentUser ? 'bg-primary/[0.08]' : player.rank <= 3 ? 'bg-primary/[0.03]' : 'hover:bg-secondary/50'
               }`}
             >
@@ -105,6 +110,12 @@ export function Leaderboard({ currentUserId }: LeaderboardProps) {
           ))}
         </div>
       </div>
+
+      <AnimatePresence>
+        {viewProfileId && (
+          <UserProfile userId={viewProfileId} currentUserId={currentUserId} onClose={() => setViewProfileId(null)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
