@@ -29,6 +29,18 @@ const Index = () => {
   const [moduleFilter, setModuleFilter] = useState<string | undefined>();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('biocore-theme') === 'dark' ||
+        (!localStorage.getItem('biocore-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', darkMode);
+    localStorage.setItem('biocore-theme', darkMode ? 'dark' : 'light');
+  }, [darkMode]);
 
   const filteredCards = useMemo(() => {
     if (!moduleFilter) return flashcards;
