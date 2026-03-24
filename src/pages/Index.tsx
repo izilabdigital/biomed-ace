@@ -1,8 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, BookOpen, Brain, Trophy, ArrowLeft, Menu, X, LogOut, RefreshCw, Settings, GraduationCap, Moon, Sun, Users } from 'lucide-react';
+import { Home, BookOpen, Brain, Trophy, ArrowLeft, Menu, X, LogOut, RefreshCw, Settings, GraduationCap } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { ProfileSettings } from '@/components/ProfileSettings';
+import { SettingsPanel } from '@/components/SettingsPanel';
 import Auth from './Auth';
 import { Dashboard } from '@/components/Dashboard';
 import { FlashcardView } from '@/components/FlashcardView';
@@ -10,10 +10,9 @@ import { QuizView } from '@/components/QuizView';
 import { Leaderboard } from '@/components/Leaderboard';
 import { SpacedRepetitionView } from '@/components/SpacedRepetitionView';
 import { ExamSimulator } from '@/components/ExamSimulator';
-import { FriendsView } from '@/components/FriendsView';
 import { flashcards } from '@/data/flashcards';
 
-type View = 'dashboard' | 'flashcards' | 'quiz' | 'leaderboard' | 'spaced' | 'exam' | 'friends';
+type View = 'dashboard' | 'flashcards' | 'quiz' | 'leaderboard' | 'spaced' | 'exam';
 
 const navItems = [
   { id: 'dashboard' as View, label: 'Dashboard', icon: Home },
@@ -21,7 +20,6 @@ const navItems = [
   { id: 'spaced' as View, label: 'Revisão SM-2', icon: RefreshCw },
   { id: 'quiz' as View, label: 'Quiz', icon: Brain },
   { id: 'exam' as View, label: 'Prova', icon: GraduationCap },
-  { id: 'friends' as View, label: 'Amigos', icon: Users },
   { id: 'leaderboard' as View, label: 'Ranking', icon: Trophy },
 ];
 
@@ -30,7 +28,8 @@ const Index = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [moduleFilter, setModuleFilter] = useState<string | undefined>();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [settingsTab, setSettingsTab] = useState('profile');
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('biocore-theme') === 'dark' ||
@@ -65,6 +64,12 @@ const Index = () => {
     setMobileMenuOpen(false);
   };
 
+  const openSettings = (tab = 'profile') => {
+    setSettingsTab(tab);
+    setShowSettings(true);
+    setMobileMenuOpen(false);
+  };
+
   const stats = {
     cardsReviewed: profile?.cards_reviewed ?? 0,
     quizScore: 0,
@@ -84,8 +89,6 @@ const Index = () => {
         return <QuizView moduleFilter={moduleFilter} userId={user.id} onProgressUpdate={refreshProfile} />;
       case 'exam':
         return <ExamSimulator moduleFilter={moduleFilter} userId={user.id} onProgressUpdate={refreshProfile} />;
-      case 'friends':
-        return <FriendsView currentUserId={user.id} />;
       case 'leaderboard':
         return <Leaderboard currentUserId={user.id} />;
     }
@@ -124,10 +127,7 @@ const Index = () => {
                 {item.label}
               </button>
             ))}
-            <button onClick={() => setDarkMode(d => !d)} className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground" title={darkMode ? 'Modo claro' : 'Modo escuro'}>
-              {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
-            <button onClick={() => setShowProfile(true)} className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground" title="Perfil">
+            <button onClick={() => openSettings()} className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground" title="Configurações">
               <Settings className="w-4 h-4" />
             </button>
             <button onClick={signOut} className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground" title="Sair">
@@ -167,14 +167,7 @@ const Index = () => {
                   </button>
                 ))}
                 <button
-                  onClick={() => setDarkMode(d => !d)}
-                  className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-                >
-                  {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                  {darkMode ? 'Modo Claro' : 'Modo Escuro'}
-                </button>
-                <button
-                  onClick={() => { setShowProfile(true); setMobileMenuOpen(false); }}
+                  onClick={() => openSettings()}
                   className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
                 >
                   <Settings className="w-4 h-4" />
@@ -222,7 +215,14 @@ const Index = () => {
       </main>
 
       <AnimatePresence>
-        {showProfile && <ProfileSettings onClose={() => setShowProfile(false)} />}
+        {showSettings && (
+          <SettingsPanel
+            onClose={() => setShowSettings(false)}
+            darkMode={darkMode}
+            onToggleDarkMode={() => setDarkMode(d => !d)}
+            defaultTab={settingsTab}
+          />
+        )}
       </AnimatePresence>
     </div>
   );
