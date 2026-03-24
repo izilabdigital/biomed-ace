@@ -140,6 +140,18 @@ export function UserProfile({ userId, currentUserId, onClose }: UserProfileProps
             <>
               <div className="mt-3">
                 <h2 className="text-xl font-bold text-foreground">{profile.display_name}</h2>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(profile.friend_code);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                  className="mt-1 flex items-center gap-1.5 text-sm text-primary font-mono font-semibold hover:opacity-70 transition-opacity"
+                  title="Clique para copiar"
+                >
+                  #{profile.friend_code}
+                  {copied ? <Check className="w-3.5 h-3.5 text-accent" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
                 <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                   <Clock className="w-3 h-3" />
                   Membro desde {new Date(profile.created_at).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
