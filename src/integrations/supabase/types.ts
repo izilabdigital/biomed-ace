@@ -91,6 +91,7 @@ export type Database = {
           created_at: string
           current_streak: number
           display_name: string
+          friend_code: string
           id: string
           last_study_date: string | null
           quizzes_completed: number
@@ -105,6 +106,7 @@ export type Database = {
           created_at?: string
           current_streak?: number
           display_name?: string
+          friend_code?: string
           id?: string
           last_study_date?: string | null
           quizzes_completed?: number
@@ -119,6 +121,7 @@ export type Database = {
           created_at?: string
           current_streak?: number
           display_name?: string
+          friend_code?: string
           id?: string
           last_study_date?: string | null
           quizzes_completed?: number
