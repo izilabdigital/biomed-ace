@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X, BookOpen, Brain, Trophy, Flame, Star, UserPlus, UserCheck, Clock, Users } from 'lucide-react';
+import { X, BookOpen, Brain, Trophy, Flame, Star, UserPlus, UserCheck, Clock, Users, Copy, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface UserProfileProps {
