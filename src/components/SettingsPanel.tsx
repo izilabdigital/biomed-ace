@@ -102,7 +102,7 @@ export function SettingsPanel({ onClose, darkMode, onToggleDarkMode, defaultTab 
 
     let profiles: ProfileRow[] = [];
     if (allIds.length > 0) {
-      const { data } = await supabase.from('profiles').select('user_id, display_name, total_points, current_streak').in('user_id', allIds);
+      const { data } = await supabase.from('profiles').select('user_id, display_name, total_points, current_streak, friend_code').in('user_id', allIds);
       profiles = data || [];
     }
 
