@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Lock, Save, X, CheckCircle, Moon, Sun, Users, Settings, Search, UserPlus, UserCheck, Clock, Star, Flame, Bell } from 'lucide-react';
+import { User, Lock, Save, X, CheckCircle, Moon, Sun, Users, Settings, Search, UserPlus, UserCheck, Clock, Star, Flame, Bell, Copy, Check, Hash } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { UserProfile } from './UserProfile';
