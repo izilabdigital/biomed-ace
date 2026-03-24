@@ -110,7 +110,7 @@ export function SettingsPanel({ onClose, darkMode, onToggleDarkMode, defaultTab 
 
     setFriends(accepted.map(f => {
       const uid = f.requester_id === currentUserId ? f.addressee_id : f.requester_id;
-      return { ...(profileMap.get(uid) || { user_id: uid, display_name: 'Usuário', total_points: 0, current_streak: 0 }), friendshipId: f.id };
+      return { ...(profileMap.get(uid) || { user_id: uid, display_name: 'Usuário', total_points: 0, current_streak: 0, friend_code: '' }), friendshipId: f.id };
     }));
 
     setRequests(pending.map(f => ({
