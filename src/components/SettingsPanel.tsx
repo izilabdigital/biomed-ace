@@ -18,6 +18,7 @@ interface ProfileRow {
   display_name: string;
   total_points: number;
   current_streak: number;
+  friend_code: string;
 }
 
 export function SettingsPanel({ onClose, darkMode, onToggleDarkMode, defaultTab = 'profile' }: SettingsPanelProps) {
