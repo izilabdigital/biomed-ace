@@ -44,6 +44,7 @@ export function SettingsPanel({ onClose, darkMode, onToggleDarkMode, defaultTab 
   const [friendIds, setFriendIds] = useState<Set<string>>(new Set());
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
   const [friendsTab, setFriendsTab] = useState<'friends' | 'requests' | 'search'>('friends');
+  const [codeCopied, setCodeCopied] = useState(false);
 
   useEffect(() => {
     if (currentUserId) fetchFriendsAndRequests();
