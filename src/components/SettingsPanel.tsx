@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Lock, Save, X, CheckCircle, Moon, Sun, Users, Settings, Search, UserPlus, UserCheck, Clock, Star, Flame, Bell } from 'lucide-react';
+import { User, Lock, Save, X, CheckCircle, Moon, Sun, Users, Settings, Search, UserPlus, UserCheck, Clock, Star, Flame, Bell, Copy, Check, Hash } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { UserProfile } from './UserProfile';
@@ -18,6 +18,7 @@ interface ProfileRow {
   display_name: string;
   total_points: number;
   current_streak: number;
+  friend_code: string;
 }
 
 export function SettingsPanel({ onClose, darkMode, onToggleDarkMode, defaultTab = 'profile' }: SettingsPanelProps) {
@@ -43,6 +44,7 @@ export function SettingsPanel({ onClose, darkMode, onToggleDarkMode, defaultTab 
   const [friendIds, setFriendIds] = useState<Set<string>>(new Set());
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
   const [friendsTab, setFriendsTab] = useState<'friends' | 'requests' | 'search'>('friends');
+  const [codeCopied, setCodeCopied] = useState(false);
 
   useEffect(() => {
     if (currentUserId) fetchFriendsAndRequests();
@@ -100,7 +102,7 @@ export function SettingsPanel({ onClose, darkMode, onToggleDarkMode, defaultTab 
 
     let profiles: ProfileRow[] = [];
     if (allIds.length > 0) {
-      const { data } = await supabase.from('profiles').select('user_id, display_name, total_points, current_streak').in('user_id', allIds);
+      const { data } = await supabase.from('profiles').select('user_id, display_name, total_points, current_streak, friend_code').in('user_id', allIds);
       profiles = data || [];
     }
 
@@ -108,11 +110,11 @@ export function SettingsPanel({ onClose, darkMode, onToggleDarkMode, defaultTab 
 
     setFriends(accepted.map(f => {
       const uid = f.requester_id === currentUserId ? f.addressee_id : f.requester_id;
-      return { ...(profileMap.get(uid) || { user_id: uid, display_name: 'Usuário', total_points: 0, current_streak: 0 }), friendshipId: f.id };
+      return { ...(profileMap.get(uid) || { user_id: uid, display_name: 'Usuário', total_points: 0, current_streak: 0, friend_code: '' }), friendshipId: f.id };
     }));
 
     setRequests(pending.map(f => ({
-      ...(profileMap.get(f.requester_id) || { user_id: f.requester_id, display_name: 'Usuário', total_points: 0, current_streak: 0 }),
+      ...(profileMap.get(f.requester_id) || { user_id: f.requester_id, display_name: 'Usuário', total_points: 0, current_streak: 0, friend_code: '' }),
       friendshipId: f.id,
     })));
 
@@ -140,9 +142,10 @@ export function SettingsPanel({ onClose, darkMode, onToggleDarkMode, defaultTab 
   };
 
   const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
+    const q = searchQuery.trim().replace('#', '');
+    if (!q) return;
     setSearching(true);
-    const { data } = await supabase.from('profiles').select('user_id, display_name, total_points, current_streak').ilike('display_name', `%${searchQuery.trim()}%`).neq('user_id', currentUserId).limit(20);
+    const { data } = await supabase.from('profiles').select('user_id, display_name, total_points, current_streak, friend_code').eq('friend_code', q).neq('user_id', currentUserId).limit(1);
     setSearchResults(data || []);
     setSearching(false);
   };
@@ -210,6 +213,26 @@ export function SettingsPanel({ onClose, darkMode, onToggleDarkMode, defaultTab 
           <div className="flex-1 overflow-y-auto px-6 pb-6">
             {/* Profile Tab */}
             <TabsContent value="profile" className="space-y-4 mt-0">
+              {/* Friend code display */}
+              <div className="bg-secondary/50 rounded-xl p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Seu código de amigo</p>
+                  <p className="text-lg font-mono font-bold text-foreground">#{profile?.friend_code || '------'}</p>
+                </div>
+                <button
+                  onClick={async () => {
+                    if (profile?.friend_code) {
+                      await navigator.clipboard.writeText(profile.friend_code);
+                      setCodeCopied(true);
+                      setTimeout(() => setCodeCopied(false), 2000);
+                    }
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
+                >
+                  {codeCopied ? <><Check className="w-3.5 h-3.5" /> Copiado!</> : <><Copy className="w-3.5 h-3.5" /> Copiar</>}
+                </button>
+              </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">Nome de exibição</label>
                 <div className="relative">
@@ -317,9 +340,9 @@ export function SettingsPanel({ onClose, darkMode, onToggleDarkMode, defaultTab 
                 <div className="space-y-3">
                   <div className="flex gap-2">
                     <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <input type="text" placeholder="Buscar por nome..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()}
-                        className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+                      <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <input type="text" placeholder="Digite o código (ex: 123456)" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()} maxLength={7}
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-secondary text-foreground text-sm font-mono placeholder:text-muted-foreground placeholder:font-sans focus:outline-none focus:ring-2 focus:ring-primary" />
                     </div>
                     <button onClick={handleSearch} disabled={searching} className="px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50">Buscar</button>
                   </div>
