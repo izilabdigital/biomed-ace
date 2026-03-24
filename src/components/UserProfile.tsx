@@ -30,6 +30,7 @@ export function UserProfile({ userId, currentUserId, onClose }: UserProfileProps
   const [friendshipId, setFriendshipId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
   const isSelf = userId === currentUserId;
 
   useEffect(() => {
