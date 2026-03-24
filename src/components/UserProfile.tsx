@@ -19,6 +19,7 @@ interface ProfileData {
   current_streak: number;
   best_streak: number;
   created_at: string;
+  friend_code: string;
 }
 
 type FriendshipStatus = 'none' | 'pending_sent' | 'pending_received' | 'accepted';
