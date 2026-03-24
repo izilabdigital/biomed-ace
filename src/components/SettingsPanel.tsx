@@ -142,9 +142,10 @@ export function SettingsPanel({ onClose, darkMode, onToggleDarkMode, defaultTab 
   };
 
   const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
+    const q = searchQuery.trim().replace('#', '');
+    if (!q) return;
     setSearching(true);
-    const { data } = await supabase.from('profiles').select('user_id, display_name, total_points, current_streak').ilike('display_name', `%${searchQuery.trim()}%`).neq('user_id', currentUserId).limit(20);
+    const { data } = await supabase.from('profiles').select('user_id, display_name, total_points, current_streak, friend_code').eq('friend_code', q).neq('user_id', currentUserId).limit(1);
     setSearchResults(data || []);
     setSearching(false);
   };
