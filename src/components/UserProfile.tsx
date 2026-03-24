@@ -40,7 +40,7 @@ export function UserProfile({ userId, currentUserId, onClose }: UserProfileProps
   const fetchProfile = async () => {
     const { data } = await supabase
       .from('profiles')
-      .select('user_id, display_name, avatar_url, total_points, cards_reviewed, quizzes_completed, current_streak, best_streak, created_at')
+      .select('user_id, display_name, avatar_url, total_points, cards_reviewed, quizzes_completed, current_streak, best_streak, created_at, friend_code')
       .eq('user_id', userId)
       .single();
     if (data) setProfile(data);
