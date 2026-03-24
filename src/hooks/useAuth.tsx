@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface AuthContextType {
   session: Session | null;
   user: User | null;
-  profile: { display_name: string; total_points: number; cards_reviewed: number; quizzes_completed: number; current_streak: number; best_streak: number } | null;
+  profile: { display_name: string; total_points: number; cards_reviewed: number; quizzes_completed: number; current_streak: number; best_streak: number; friend_code: string } | null;
   loading: boolean;
   signUp: (email: string, password: string, displayName: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
