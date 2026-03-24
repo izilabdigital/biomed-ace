@@ -114,7 +114,7 @@ export function SettingsPanel({ onClose, darkMode, onToggleDarkMode, defaultTab 
     }));
 
     setRequests(pending.map(f => ({
-      ...(profileMap.get(f.requester_id) || { user_id: f.requester_id, display_name: 'Usuário', total_points: 0, current_streak: 0 }),
+      ...(profileMap.get(f.requester_id) || { user_id: f.requester_id, display_name: 'Usuário', total_points: 0, current_streak: 0, friend_code: '' }),
       friendshipId: f.id,
     })));
 
