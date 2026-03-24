@@ -213,6 +213,26 @@ export function SettingsPanel({ onClose, darkMode, onToggleDarkMode, defaultTab 
           <div className="flex-1 overflow-y-auto px-6 pb-6">
             {/* Profile Tab */}
             <TabsContent value="profile" className="space-y-4 mt-0">
+              {/* Friend code display */}
+              <div className="bg-secondary/50 rounded-xl p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Seu código de amigo</p>
+                  <p className="text-lg font-mono font-bold text-foreground">#{profile?.friend_code || '------'}</p>
+                </div>
+                <button
+                  onClick={async () => {
+                    if (profile?.friend_code) {
+                      await navigator.clipboard.writeText(profile.friend_code);
+                      setCodeCopied(true);
+                      setTimeout(() => setCodeCopied(false), 2000);
+                    }
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
+                >
+                  {codeCopied ? <><Check className="w-3.5 h-3.5" /> Copiado!</> : <><Copy className="w-3.5 h-3.5" /> Copiar</>}
+                </button>
+              </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">Nome de exibição</label>
                 <div className="relative">
