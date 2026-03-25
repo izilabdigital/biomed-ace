@@ -205,9 +205,6 @@ export function SettingsPanel({ onClose, darkMode, onToggleDarkMode, defaultTab 
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="appearance" className="flex items-center gap-1.5 text-xs">
-              {darkMode ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />} Aparência
-            </TabsTrigger>
           </TabsList>
 
           <div className="flex-1 overflow-y-auto px-6 pb-6">
@@ -267,6 +264,23 @@ export function SettingsPanel({ onClose, darkMode, onToggleDarkMode, defaultTab 
               {error && <p className="text-sm text-destructive">{error}</p>}
               {success && <p className="text-sm text-accent flex items-center gap-1"><CheckCircle className="w-4 h-4" />{success}</p>}
               <p className="text-xs text-muted-foreground">Email: {user?.email}</p>
+
+              {/* Appearance toggle */}
+              <div className="pt-3 border-t border-border">
+                <div className="bg-secondary/50 rounded-xl p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {darkMode ? <Moon className="w-5 h-5 text-primary" /> : <Sun className="w-5 h-5 text-primary" />}
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{darkMode ? 'Modo Escuro' : 'Modo Claro'}</p>
+                      <p className="text-xs text-muted-foreground">Alternar aparência do app</p>
+                    </div>
+                  </div>
+                  <button onClick={onToggleDarkMode}
+                    className={`relative w-12 h-7 rounded-full transition-colors ${darkMode ? 'bg-primary' : 'bg-muted-foreground/30'}`}>
+                    <span className={`absolute top-0.5 w-6 h-6 rounded-full bg-card shadow transition-transform ${darkMode ? 'left-[calc(100%-1.625rem)]' : 'left-0.5'}`} />
+                  </button>
+                </div>
+              </div>
             </TabsContent>
 
             {/* Friends Tab */}
@@ -368,22 +382,6 @@ export function SettingsPanel({ onClose, darkMode, onToggleDarkMode, defaultTab 
               )}
             </TabsContent>
 
-            {/* Appearance Tab */}
-            <TabsContent value="appearance" className="space-y-4 mt-0">
-              <div className="bg-secondary/50 rounded-xl p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {darkMode ? <Moon className="w-5 h-5 text-primary" /> : <Sun className="w-5 h-5 text-primary" />}
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{darkMode ? 'Modo Escuro' : 'Modo Claro'}</p>
-                    <p className="text-xs text-muted-foreground">Alternar aparência do app</p>
-                  </div>
-                </div>
-                <button onClick={onToggleDarkMode}
-                  className={`relative w-12 h-7 rounded-full transition-colors ${darkMode ? 'bg-primary' : 'bg-muted-foreground/30'}`}>
-                  <span className={`absolute top-0.5 w-6 h-6 rounded-full bg-card shadow transition-transform ${darkMode ? 'left-[calc(100%-1.625rem)]' : 'left-0.5'}`} />
-                </button>
-              </div>
-            </TabsContent>
           </div>
         </Tabs>
       </motion.div>
