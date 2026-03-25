@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, BookOpen, Brain, Trophy, ArrowLeft, Menu, X, LogOut, RefreshCw, Settings, GraduationCap } from 'lucide-react';
+import { Home, BookOpen, Brain, Trophy, ArrowLeft, Menu, X, RefreshCw, User, GraduationCap } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import Auth from './Auth';
@@ -12,7 +12,7 @@ import { SpacedRepetitionView } from '@/components/SpacedRepetitionView';
 import { ExamSimulator } from '@/components/ExamSimulator';
 import { flashcards } from '@/data/flashcards';
 
-type View = 'dashboard' | 'flashcards' | 'quiz' | 'leaderboard' | 'spaced' | 'exam';
+type View = 'dashboard' | 'flashcards' | 'quiz' | 'leaderboard' | 'spaced' | 'exam' | 'profile';
 
 const navItems = [
   { id: 'dashboard' as View, label: 'Dashboard', icon: Home },
@@ -21,15 +21,14 @@ const navItems = [
   { id: 'quiz' as View, label: 'Quiz', icon: Brain },
   { id: 'exam' as View, label: 'Prova', icon: GraduationCap },
   { id: 'leaderboard' as View, label: 'Ranking', icon: Trophy },
+  { id: 'profile' as View, label: 'Perfil', icon: User },
 ];
 
 const Index = () => {
-  const { user, profile, loading, signOut, refreshProfile } = useAuth();
+  const { user, profile, loading, refreshProfile } = useAuth();
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [moduleFilter, setModuleFilter] = useState<string | undefined>();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [settingsTab, setSettingsTab] = useState('profile');
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('biocore-theme') === 'dark' ||
@@ -64,12 +63,6 @@ const Index = () => {
     setMobileMenuOpen(false);
   };
 
-  const openSettings = (tab = 'profile') => {
-    setSettingsTab(tab);
-    setShowSettings(true);
-    setMobileMenuOpen(false);
-  };
-
   const stats = {
     cardsReviewed: profile?.cards_reviewed ?? 0,
     quizScore: 0,
@@ -91,6 +84,8 @@ const Index = () => {
         return <ExamSimulator moduleFilter={moduleFilter} userId={user.id} onProgressUpdate={refreshProfile} />;
       case 'leaderboard':
         return <Leaderboard currentUserId={user.id} />;
+      case 'profile':
+        return <SettingsPanel darkMode={darkMode} onToggleDarkMode={() => setDarkMode(d => !d)} />;
     }
   };
 
@@ -127,12 +122,6 @@ const Index = () => {
                 {item.label}
               </button>
             ))}
-            <button onClick={() => openSettings()} className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground" title="Configurações">
-              <Settings className="w-4 h-4" />
-            </button>
-            <button onClick={signOut} className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground" title="Sair">
-              <LogOut className="w-4 h-4" />
-            </button>
           </nav>
 
           <button
@@ -166,20 +155,6 @@ const Index = () => {
                     {item.label}
                   </button>
                 ))}
-                <button
-                  onClick={() => openSettings()}
-                  className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-                >
-                  <Settings className="w-4 h-4" />
-                  Configurações
-                </button>
-                <button
-                  onClick={signOut}
-                  className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-destructive hover:bg-secondary transition-colors"
-                >
-                  <LogOut className="w-4 h-4" />
-                  Sair
-                </button>
               </div>
             </motion.div>
           )}
@@ -213,17 +188,6 @@ const Index = () => {
           </motion.div>
         </AnimatePresence>
       </main>
-
-      <AnimatePresence>
-        {showSettings && (
-          <SettingsPanel
-            onClose={() => setShowSettings(false)}
-            darkMode={darkMode}
-            onToggleDarkMode={() => setDarkMode(d => !d)}
-            defaultTab={settingsTab}
-          />
-        )}
-      </AnimatePresence>
     </div>
   );
 };

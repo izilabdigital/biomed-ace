@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { User, Lock, Save, X, CheckCircle, Moon, Sun, Users, Settings, Search, UserPlus, UserCheck, Clock, Star, Flame, Bell, Copy, Check, Hash } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
+import { User, Lock, Save, CheckCircle, Moon, Sun, Users, Search, UserPlus, UserCheck, Clock, Star, Flame, Bell, Copy, Check, Hash, LogOut } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { UserProfile } from './UserProfile';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 interface SettingsPanelProps {
-  onClose: () => void;
   darkMode: boolean;
   onToggleDarkMode: () => void;
   defaultTab?: string;
@@ -21,8 +20,8 @@ interface ProfileRow {
   friend_code: string;
 }
 
-export function SettingsPanel({ onClose, darkMode, onToggleDarkMode, defaultTab = 'profile' }: SettingsPanelProps) {
-  const { user, profile, refreshProfile } = useAuth();
+export function SettingsPanel({ darkMode, onToggleDarkMode, defaultTab = 'profile' }: SettingsPanelProps) {
+  const { user, profile, refreshProfile, signOut } = useAuth();
   const currentUserId = user?.id || '';
 
   // Profile state
@@ -64,7 +63,6 @@ export function SettingsPanel({ onClose, darkMode, onToggleDarkMode, defaultTab 
         const requesterId = (payload.new as any).requester_id;
         const { data } = await supabase.from('profiles').select('display_name').eq('user_id', requesterId).single();
         const name = data?.display_name || 'Alguém';
-        // Show browser notification if available
         if ('Notification' in window && Notification.permission === 'granted') {
           new Notification('BioCore', { body: `${name} enviou uma solicitação de amizade!` });
         }
@@ -72,7 +70,6 @@ export function SettingsPanel({ onClose, darkMode, onToggleDarkMode, defaultTab 
       })
       .subscribe();
 
-    // Request notification permission
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission();
     }
@@ -168,229 +165,215 @@ export function SettingsPanel({ onClose, darkMode, onToggleDarkMode, defaultTab 
   const initials = (name: string) => name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        onClick={e => e.stopPropagation()}
-        className="bg-card rounded-2xl shadow-card w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden"
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 pt-5 pb-3">
-          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-            <Settings className="w-5 h-5 text-primary" /> Configurações
-          </h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-secondary transition-colors">
-            <X className="w-5 h-5 text-muted-foreground" />
+    <>
+      {/* Profile header card */}
+      <div className="bg-card rounded-2xl shadow-card p-6 mb-6 flex items-center gap-4">
+        <div className="w-14 h-14 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xl font-bold">
+          {initials(profile?.display_name || 'U')}
+        </div>
+        <div className="flex-1 min-w-0">
+          <h2 className="text-lg font-semibold text-foreground truncate">{profile?.display_name || 'Usuário'}</h2>
+          <p className="text-xs text-muted-foreground">{user?.email}</p>
+          <button
+            onClick={async () => {
+              if (profile?.friend_code) {
+                await navigator.clipboard.writeText(profile.friend_code);
+                setCodeCopied(true);
+                setTimeout(() => setCodeCopied(false), 2000);
+              }
+            }}
+            className="mt-1 flex items-center gap-1 text-xs font-mono text-primary hover:text-primary/80 transition-colors"
+          >
+            #{profile?.friend_code || '------'}
+            {codeCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
           </button>
         </div>
+      </div>
 
-        <Tabs defaultValue={defaultTab} className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="mx-6 mb-3">
-            <TabsTrigger value="profile" className="flex items-center gap-1.5 text-xs">
-              <User className="w-3.5 h-3.5" /> Perfil
-            </TabsTrigger>
-            <TabsTrigger value="friends" className="flex items-center gap-1.5 text-xs relative">
-              <Users className="w-3.5 h-3.5" /> Amigos
-              {requests.length > 0 && (
-                <span className="ml-1 w-4 h-4 rounded-full bg-destructive text-destructive-foreground text-[10px] flex items-center justify-center font-bold">
-                  {requests.length}
-                </span>
-              )}
-            </TabsTrigger>
-          </TabsList>
+      <Tabs defaultValue={defaultTab} className="w-full">
+        <TabsList className="mb-4 w-full">
+          <TabsTrigger value="profile" className="flex-1 flex items-center gap-1.5 text-xs">
+            <User className="w-3.5 h-3.5" /> Perfil
+          </TabsTrigger>
+          <TabsTrigger value="friends" className="flex-1 flex items-center gap-1.5 text-xs relative">
+            <Users className="w-3.5 h-3.5" /> Amigos
+            {requests.length > 0 && (
+              <span className="ml-1 w-4 h-4 rounded-full bg-destructive text-destructive-foreground text-[10px] flex items-center justify-center font-bold">
+                {requests.length}
+              </span>
+            )}
+          </TabsTrigger>
+        </TabsList>
 
-          <div className="flex-1 overflow-y-auto px-6 pb-6">
-            {/* Profile Tab */}
-            <TabsContent value="profile" className="space-y-4 mt-0">
-              {/* Friend code display */}
-              <div className="bg-secondary/50 rounded-xl p-4 flex items-center justify-between">
+        {/* Profile Tab */}
+        <TabsContent value="profile" className="space-y-4 mt-0">
+          <div className="bg-card rounded-2xl shadow-card p-5 space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Nome de exibição</label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input type="text" value={displayName} onChange={e => setDisplayName(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+              </div>
+              <button onClick={handleSaveName} disabled={saving}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:shadow-card-hover transition-all disabled:opacity-50">
+                <Save className="w-4 h-4" /> Salvar nome
+              </button>
+            </div>
+
+            <div className="space-y-2 pt-3 border-t border-border">
+              <label className="text-sm font-medium text-foreground">Alterar senha</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input type="password" placeholder="Nova senha" value={newPassword} onChange={e => setNewPassword(e.target.value)} minLength={6}
+                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+              </div>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input type="password" placeholder="Confirmar nova senha" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} minLength={6}
+                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+              </div>
+              <button onClick={handleChangePassword} disabled={saving}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:shadow-card-hover transition-all disabled:opacity-50">
+                <Lock className="w-4 h-4" /> Alterar senha
+              </button>
+            </div>
+
+            {error && <p className="text-sm text-destructive">{error}</p>}
+            {success && <p className="text-sm text-accent flex items-center gap-1"><CheckCircle className="w-4 h-4" />{success}</p>}
+          </div>
+
+          {/* Appearance */}
+          <div className="bg-card rounded-2xl shadow-card p-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {darkMode ? <Moon className="w-5 h-5 text-primary" /> : <Sun className="w-5 h-5 text-primary" />}
                 <div>
-                  <p className="text-xs text-muted-foreground mb-1">Seu código de amigo</p>
-                  <p className="text-lg font-mono font-bold text-foreground">#{profile?.friend_code || '------'}</p>
+                  <p className="text-sm font-medium text-foreground">{darkMode ? 'Modo Escuro' : 'Modo Claro'}</p>
+                  <p className="text-xs text-muted-foreground">Alternar aparência do app</p>
                 </div>
-                <button
-                  onClick={async () => {
-                    if (profile?.friend_code) {
-                      await navigator.clipboard.writeText(profile.friend_code);
-                      setCodeCopied(true);
-                      setTimeout(() => setCodeCopied(false), 2000);
-                    }
-                  }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
-                >
-                  {codeCopied ? <><Check className="w-3.5 h-3.5" /> Copiado!</> : <><Copy className="w-3.5 h-3.5" /> Copiar</>}
-                </button>
               </div>
+              <button onClick={onToggleDarkMode}
+                className={`relative w-12 h-7 rounded-full transition-colors ${darkMode ? 'bg-primary' : 'bg-muted-foreground/30'}`}>
+                <span className={`absolute top-0.5 w-6 h-6 rounded-full bg-card shadow transition-transform ${darkMode ? 'left-[calc(100%-1.625rem)]' : 'left-0.5'}`} />
+              </button>
+            </div>
+          </div>
 
+          {/* Sign out */}
+          <button onClick={signOut}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-card shadow-card text-destructive text-sm font-medium hover:bg-destructive/10 transition-colors">
+            <LogOut className="w-4 h-4" /> Sair da conta
+          </button>
+        </TabsContent>
+
+        {/* Friends Tab */}
+        <TabsContent value="friends" className="space-y-4 mt-0">
+          <div className="bg-card rounded-2xl shadow-card p-5 space-y-4">
+            <div className="flex gap-2">
+              {([
+                { id: 'friends' as const, label: 'Amigos', icon: Users, count: friends.length },
+                { id: 'requests' as const, label: 'Solicitações', icon: Bell, count: requests.length },
+                { id: 'search' as const, label: 'Buscar', icon: Search },
+              ] as const).map(t => (
+                <button key={t.id} onClick={() => setFriendsTab(t.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    friendsTab === t.id ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'
+                  }`}>
+                  <t.icon className="w-3.5 h-3.5" />
+                  {t.label}
+                  {'count' in t && t.count !== undefined && t.count > 0 && (
+                    <span className={`text-[10px] px-1 rounded-full ${friendsTab === t.id ? 'bg-primary-foreground/20' : 'bg-primary/10 text-primary'}`}>{t.count}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {friendsTab === 'friends' && (
               <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Nome de exibição</label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <input type="text" value={displayName} onChange={e => setDisplayName(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
-                </div>
-                <button onClick={handleSaveName} disabled={saving}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:shadow-card-hover transition-all disabled:opacity-50">
-                  <Save className="w-4 h-4" /> Salvar nome
-                </button>
-              </div>
-
-              <div className="space-y-2 pt-3 border-t border-border">
-                <label className="text-sm font-medium text-foreground">Alterar senha</label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <input type="password" placeholder="Nova senha" value={newPassword} onChange={e => setNewPassword(e.target.value)} minLength={6}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
-                </div>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <input type="password" placeholder="Confirmar nova senha" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} minLength={6}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
-                </div>
-                <button onClick={handleChangePassword} disabled={saving}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:shadow-card-hover transition-all disabled:opacity-50">
-                  <Lock className="w-4 h-4" /> Alterar senha
-                </button>
-              </div>
-
-              {error && <p className="text-sm text-destructive">{error}</p>}
-              {success && <p className="text-sm text-accent flex items-center gap-1"><CheckCircle className="w-4 h-4" />{success}</p>}
-              <p className="text-xs text-muted-foreground">Email: {user?.email}</p>
-
-              {/* Appearance toggle */}
-              <div className="pt-3 border-t border-border">
-                <div className="bg-secondary/50 rounded-xl p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    {darkMode ? <Moon className="w-5 h-5 text-primary" /> : <Sun className="w-5 h-5 text-primary" />}
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{darkMode ? 'Modo Escuro' : 'Modo Claro'}</p>
-                      <p className="text-xs text-muted-foreground">Alternar aparência do app</p>
+                {loadingFriends ? <p className="text-center py-8 text-muted-foreground text-sm">Carregando...</p>
+                  : friends.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Users className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">Nenhum amigo ainda</p>
                     </div>
-                  </div>
-                  <button onClick={onToggleDarkMode}
-                    className={`relative w-12 h-7 rounded-full transition-colors ${darkMode ? 'bg-primary' : 'bg-muted-foreground/30'}`}>
-                    <span className={`absolute top-0.5 w-6 h-6 rounded-full bg-card shadow transition-transform ${darkMode ? 'left-[calc(100%-1.625rem)]' : 'left-0.5'}`} />
-                  </button>
-                </div>
-              </div>
-            </TabsContent>
-
-            {/* Friends Tab */}
-            <TabsContent value="friends" className="space-y-4 mt-0">
-              <div className="flex gap-2">
-                {([
-                  { id: 'friends' as const, label: 'Amigos', icon: Users, count: friends.length },
-                  { id: 'requests' as const, label: 'Solicitações', icon: Bell, count: requests.length },
-                  { id: 'search' as const, label: 'Buscar', icon: Search },
-                ] as const).map(t => (
-                  <button key={t.id} onClick={() => setFriendsTab(t.id)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      friendsTab === t.id ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'
-                    }`}>
-                    <t.icon className="w-3.5 h-3.5" />
-                    {t.label}
-                    {'count' in t && t.count !== undefined && t.count > 0 && (
-                      <span className={`text-[10px] px-1 rounded-full ${friendsTab === t.id ? 'bg-primary-foreground/20' : 'bg-primary/10 text-primary'}`}>{t.count}</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-
-              {friendsTab === 'friends' && (
-                <div className="space-y-2">
-                  {loadingFriends ? <p className="text-center py-8 text-muted-foreground text-sm">Carregando...</p>
-                    : friends.length === 0 ? (
-                      <div className="text-center py-8">
-                        <Users className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
-                        <p className="text-sm text-muted-foreground">Nenhum amigo ainda</p>
-                      </div>
-                    ) : friends.map(f => (
-                      <div key={f.friendshipId} onClick={() => setViewProfileId(f.user_id)}
-                        className="bg-secondary/50 rounded-xl p-3 flex items-center gap-3 cursor-pointer hover:bg-secondary transition-colors">
-                        <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">{initials(f.display_name)}</div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-foreground text-sm truncate">{f.display_name}</p>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground flex items-center gap-0.5"><Star className="w-3 h-3 text-yellow-500" />{f.total_points}</span>
-                            <span className="text-xs text-muted-foreground flex items-center gap-0.5"><Flame className="w-3 h-3 text-orange-500" />{f.current_streak}d</span>
-                          </div>
-                        </div>
-                        <UserCheck className="w-4 h-4 text-accent" />
-                      </div>
-                    ))}
-                </div>
-              )}
-
-              {friendsTab === 'requests' && (
-                <div className="space-y-2">
-                  {requests.length === 0 ? (
-                    <p className="text-center py-8 text-sm text-muted-foreground">Nenhuma solicitação pendente</p>
-                  ) : requests.map(r => (
-                    <div key={r.friendshipId} className="bg-secondary/50 rounded-xl p-3 flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold cursor-pointer"
-                        onClick={() => setViewProfileId(r.user_id)}>{initials(r.display_name)}</div>
+                  ) : friends.map(f => (
+                    <div key={f.friendshipId} onClick={() => setViewProfileId(f.user_id)}
+                      className="bg-secondary/50 rounded-xl p-3 flex items-center gap-3 cursor-pointer hover:bg-secondary transition-colors">
+                      <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">{initials(f.display_name)}</div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-foreground text-sm truncate">{r.display_name}</p>
-                        <p className="text-xs text-muted-foreground">Quer ser seu amigo</p>
+                        <p className="font-medium text-foreground text-sm truncate">{f.display_name}</p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground flex items-center gap-0.5"><Star className="w-3 h-3 text-yellow-500" />{f.total_points}</span>
+                          <span className="text-xs text-muted-foreground flex items-center gap-0.5"><Flame className="w-3 h-3 text-orange-500" />{f.current_streak}d</span>
+                        </div>
                       </div>
-                      <div className="flex gap-1.5">
-                        <button onClick={() => acceptRequest(r.friendshipId)} className="px-2.5 py-1 rounded-lg bg-primary text-primary-foreground text-xs font-medium">Aceitar</button>
-                        <button onClick={() => rejectRequest(r.friendshipId)} className="px-2.5 py-1 rounded-lg bg-secondary text-muted-foreground text-xs font-medium">Recusar</button>
-                      </div>
+                      <UserCheck className="w-4 h-4 text-accent" />
                     </div>
                   ))}
-                </div>
-              )}
+              </div>
+            )}
 
-              {friendsTab === 'search' && (
-                <div className="space-y-3">
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <input type="text" placeholder="Digite o código (ex: 123456)" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()} maxLength={7}
-                        className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-secondary text-foreground text-sm font-mono placeholder:text-muted-foreground placeholder:font-sans focus:outline-none focus:ring-2 focus:ring-primary" />
+            {friendsTab === 'requests' && (
+              <div className="space-y-2">
+                {requests.length === 0 ? (
+                  <p className="text-center py-8 text-sm text-muted-foreground">Nenhuma solicitação pendente</p>
+                ) : requests.map(r => (
+                  <div key={r.friendshipId} className="bg-secondary/50 rounded-xl p-3 flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold cursor-pointer"
+                      onClick={() => setViewProfileId(r.user_id)}>{initials(r.display_name)}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-foreground text-sm truncate">{r.display_name}</p>
+                      <p className="text-xs text-muted-foreground">Quer ser seu amigo</p>
                     </div>
-                    <button onClick={handleSearch} disabled={searching} className="px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50">Buscar</button>
+                    <div className="flex gap-1.5">
+                      <button onClick={() => acceptRequest(r.friendshipId)} className="px-2.5 py-1 rounded-lg bg-primary text-primary-foreground text-xs font-medium">Aceitar</button>
+                      <button onClick={() => rejectRequest(r.friendshipId)} className="px-2.5 py-1 rounded-lg bg-secondary text-muted-foreground text-xs font-medium">Recusar</button>
+                    </div>
                   </div>
-                  {searching ? <p className="text-center py-6 text-muted-foreground text-sm">Buscando...</p>
-                    : searchResults.length > 0 ? searchResults.map(r => {
-                      const isFriend = friendIds.has(r.user_id);
-                      const isPending = pendingIds.has(r.user_id);
-                      return (
-                        <div key={r.user_id} className="bg-secondary/50 rounded-xl p-3 flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold cursor-pointer"
-                            onClick={() => setViewProfileId(r.user_id)}>{initials(r.display_name)}</div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-foreground text-sm truncate cursor-pointer hover:underline" onClick={() => setViewProfileId(r.user_id)}>{r.display_name}</p>
-                            <span className="text-xs text-muted-foreground flex items-center gap-0.5"><Star className="w-3 h-3 text-yellow-500" />{r.total_points} pts</span>
-                          </div>
-                          {isFriend ? <span className="text-xs text-accent flex items-center gap-1"><UserCheck className="w-3.5 h-3.5" /> Amigo</span>
-                            : isPending ? <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> Pendente</span>
-                            : <button onClick={() => sendRequest(r.user_id)} className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary text-primary-foreground text-xs font-medium"><UserPlus className="w-3.5 h-3.5" /> Adicionar</button>}
-                        </div>
-                      );
-                    }) : searchQuery && !searching ? <p className="text-center py-6 text-muted-foreground text-sm">Nenhum resultado</p> : null}
-                </div>
-              )}
-            </TabsContent>
+                ))}
+              </div>
+            )}
 
+            {friendsTab === 'search' && (
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <input type="text" placeholder="Digite o código (ex: 123456)" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()} maxLength={7}
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-secondary text-foreground text-sm font-mono placeholder:text-muted-foreground placeholder:font-sans focus:outline-none focus:ring-2 focus:ring-primary" />
+                  </div>
+                  <button onClick={handleSearch} disabled={searching} className="px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50">Buscar</button>
+                </div>
+                {searching ? <p className="text-center py-6 text-muted-foreground text-sm">Buscando...</p>
+                  : searchResults.length > 0 ? searchResults.map(r => {
+                    const isFriend = friendIds.has(r.user_id);
+                    const isPending = pendingIds.has(r.user_id);
+                    return (
+                      <div key={r.user_id} className="bg-secondary/50 rounded-xl p-3 flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold cursor-pointer"
+                          onClick={() => setViewProfileId(r.user_id)}>{initials(r.display_name)}</div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-foreground text-sm truncate cursor-pointer hover:underline" onClick={() => setViewProfileId(r.user_id)}>{r.display_name}</p>
+                          <span className="text-xs text-muted-foreground flex items-center gap-0.5"><Star className="w-3 h-3 text-yellow-500" />{r.total_points} pts</span>
+                        </div>
+                        {isFriend ? <span className="text-xs text-accent flex items-center gap-1"><UserCheck className="w-3.5 h-3.5" /> Amigo</span>
+                          : isPending ? <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> Pendente</span>
+                          : <button onClick={() => sendRequest(r.user_id)} className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary text-primary-foreground text-xs font-medium"><UserPlus className="w-3.5 h-3.5" /> Adicionar</button>}
+                      </div>
+                    );
+                  }) : searchQuery && !searching ? <p className="text-center py-6 text-muted-foreground text-sm">Nenhum resultado</p> : null}
+              </div>
+            )}
           </div>
-        </Tabs>
-      </motion.div>
+        </TabsContent>
+      </Tabs>
 
       <AnimatePresence>
         {viewProfileId && (
           <UserProfile userId={viewProfileId} currentUserId={currentUserId} onClose={() => setViewProfileId(null)} />
         )}
       </AnimatePresence>
-    </motion.div>
+    </>
   );
 }
