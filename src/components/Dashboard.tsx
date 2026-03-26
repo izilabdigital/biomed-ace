@@ -6,10 +6,12 @@ import moduleEsqueletico from '@/assets/module-esqueletico.jpg';
 import moduleOrganicos from '@/assets/module-organicos.jpg';
 import moduleClinica from '@/assets/module-clinica.jpg';
 import moduleCelular from '@/assets/module-celular.jpg';
+import moduleArticular from '@/assets/module-articular.jpg';
 
 const moduleImages: Record<string, string> = {
   'Introdução à Anatomia': moduleAnatomia,
   'Sistema Esquelético': moduleEsqueletico,
+  'Sistema Articular': moduleArticular,
   'Sistemas Orgânicos': moduleOrganicos,
   'Biomedicina Clínica': moduleClinica,
   'Biologia Celular': moduleCelular,
