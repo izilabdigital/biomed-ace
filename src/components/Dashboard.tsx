@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { BookOpen, Brain, Trophy, Layers, TrendingUp, Zap, RefreshCw } from 'lucide-react';
-import { modules } from '@/data/flashcards';
+import { useDynamicFlashcards } from '@/hooks/useDynamicFlashcards';
 import moduleAnatomia from '@/assets/module-anatomia.jpg';
 import moduleEsqueletico from '@/assets/module-esqueletico.jpg';
 import moduleOrganicos from '@/assets/module-organicos.jpg';
