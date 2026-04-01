@@ -47,9 +47,9 @@ const Index = () => {
   }, [darkMode]);
 
   const filteredCards = useMemo(() => {
-    if (!moduleFilter) return flashcards;
-    return flashcards.filter(c => c.module === moduleFilter);
-  }, [moduleFilter]);
+    if (!moduleFilter) return allCards;
+    return allCards.filter(c => c.module === moduleFilter);
+  }, [moduleFilter, allCards]);
 
   if (loading) {
     return (
