@@ -89,6 +89,8 @@ const Index = () => {
         return <Leaderboard currentUserId={user.id} />;
       case 'profile':
         return <SettingsPanel darkMode={darkMode} onToggleDarkMode={() => setDarkMode(d => !d)} />;
+      case 'admin':
+        return <AdminPanel />;
     }
   };
 
