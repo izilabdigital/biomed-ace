@@ -23,6 +23,7 @@ interface DashboardProps {
 }
 
 export function Dashboard({ onNavigate, stats }: DashboardProps) {
+  const { allModules } = useDynamicFlashcards();
   const statCards = [
     { label: 'Cards Revisados', value: stats.cardsReviewed, icon: Layers, color: 'text-primary' },
     { label: 'Precisão Quiz', value: `${stats.quizScore}%`, icon: TrendingUp, color: 'text-accent' },
