@@ -28,6 +28,7 @@ const navItems = [
 
 const Index = () => {
   const { user, profile, loading, refreshProfile } = useAuth();
+  const { isAdmin } = useAdmin();
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [moduleFilter, setModuleFilter] = useState<string | undefined>();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
