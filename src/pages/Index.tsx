@@ -1,8 +1,10 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, BookOpen, Brain, Trophy, ArrowLeft, Menu, X, RefreshCw, User, GraduationCap } from 'lucide-react';
+import { Home, BookOpen, Brain, Trophy, ArrowLeft, Menu, X, RefreshCw, User, GraduationCap, Shield } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useAdmin } from '@/hooks/useAdmin';
 import { SettingsPanel } from '@/components/SettingsPanel';
+import { AdminPanel } from '@/components/AdminPanel';
 import Auth from './Auth';
 import { Dashboard } from '@/components/Dashboard';
 import { FlashcardView } from '@/components/FlashcardView';
@@ -10,9 +12,9 @@ import { QuizView } from '@/components/QuizView';
 import { Leaderboard } from '@/components/Leaderboard';
 import { SpacedRepetitionView } from '@/components/SpacedRepetitionView';
 import { ExamSimulator } from '@/components/ExamSimulator';
-import { flashcards } from '@/data/flashcards';
+import { useDynamicFlashcards } from '@/hooks/useDynamicFlashcards';
 
-type View = 'dashboard' | 'flashcards' | 'quiz' | 'leaderboard' | 'spaced' | 'exam' | 'profile';
+type View = 'dashboard' | 'flashcards' | 'quiz' | 'leaderboard' | 'spaced' | 'exam' | 'profile' | 'admin';
 
 const navItems = [
   { id: 'dashboard' as View, label: 'Dashboard', icon: Home },
@@ -26,6 +28,8 @@ const navItems = [
 
 const Index = () => {
   const { user, profile, loading, refreshProfile } = useAuth();
+  const { isAdmin } = useAdmin();
+  const { allCards } = useDynamicFlashcards();
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [moduleFilter, setModuleFilter] = useState<string | undefined>();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -43,9 +47,9 @@ const Index = () => {
   }, [darkMode]);
 
   const filteredCards = useMemo(() => {
-    if (!moduleFilter) return flashcards;
-    return flashcards.filter(c => c.module === moduleFilter);
-  }, [moduleFilter]);
+    if (!moduleFilter) return allCards;
+    return allCards.filter(c => c.module === moduleFilter);
+  }, [moduleFilter, allCards]);
 
   if (loading) {
     return (
@@ -86,6 +90,8 @@ const Index = () => {
         return <Leaderboard currentUserId={user.id} />;
       case 'profile':
         return <SettingsPanel darkMode={darkMode} onToggleDarkMode={() => setDarkMode(d => !d)} />;
+      case 'admin':
+        return <AdminPanel />;
     }
   };
 
@@ -122,6 +128,19 @@ const Index = () => {
                 {item.label}
               </button>
             ))}
+            {isAdmin && (
+              <button
+                onClick={() => handleNavigate('admin')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                  currentView === 'admin'
+                    ? 'bg-destructive/10 text-destructive font-medium'
+                    : 'text-destructive/70 hover:text-destructive hover:bg-destructive/10'
+                }`}
+              >
+                <Shield className="w-4 h-4" />
+                Admin
+              </button>
+            )}
           </nav>
 
           <button
@@ -155,6 +174,19 @@ const Index = () => {
                     {item.label}
                   </button>
                 ))}
+                {isAdmin && (
+                  <button
+                    onClick={() => handleNavigate('admin')}
+                    className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                      currentView === 'admin'
+                        ? 'bg-destructive/10 text-destructive font-medium'
+                        : 'text-destructive/70 hover:text-destructive hover:bg-destructive/10'
+                    }`}
+                  >
+                    <Shield className="w-4 h-4" />
+                    Admin
+                  </button>
+                )}
               </div>
             </motion.div>
           )}

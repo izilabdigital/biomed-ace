@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { BookOpen, Brain, Trophy, Layers, TrendingUp, Zap, RefreshCw } from 'lucide-react';
-import { modules } from '@/data/flashcards';
+import { useDynamicFlashcards } from '@/hooks/useDynamicFlashcards';
 import moduleAnatomia from '@/assets/module-anatomia.jpg';
 import moduleEsqueletico from '@/assets/module-esqueletico.jpg';
 import moduleOrganicos from '@/assets/module-organicos.jpg';
@@ -23,6 +23,7 @@ interface DashboardProps {
 }
 
 export function Dashboard({ onNavigate, stats }: DashboardProps) {
+  const { allModules } = useDynamicFlashcards();
   const statCards = [
     { label: 'Cards Revisados', value: stats.cardsReviewed, icon: Layers, color: 'text-primary' },
     { label: 'Precisão Quiz', value: `${stats.quizScore}%`, icon: TrendingUp, color: 'text-accent' },
@@ -96,7 +97,7 @@ export function Dashboard({ onNavigate, stats }: DashboardProps) {
       <div>
         <h2 className="text-base font-semibold text-foreground mb-4">Módulos de Estudo</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {modules.map((mod, i) => {
+          {allModules.map((mod, i) => {
             const colorMap: Record<string, string> = {
               primary: 'bg-primary/10 text-primary',
               accent: 'bg-accent/10 text-accent',
