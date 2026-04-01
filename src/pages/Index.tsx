@@ -1,8 +1,10 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, BookOpen, Brain, Trophy, ArrowLeft, Menu, X, RefreshCw, User, GraduationCap } from 'lucide-react';
+import { Home, BookOpen, Brain, Trophy, ArrowLeft, Menu, X, RefreshCw, User, GraduationCap, Shield } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useAdmin } from '@/hooks/useAdmin';
 import { SettingsPanel } from '@/components/SettingsPanel';
+import { AdminPanel } from '@/components/AdminPanel';
 import Auth from './Auth';
 import { Dashboard } from '@/components/Dashboard';
 import { FlashcardView } from '@/components/FlashcardView';
@@ -12,7 +14,7 @@ import { SpacedRepetitionView } from '@/components/SpacedRepetitionView';
 import { ExamSimulator } from '@/components/ExamSimulator';
 import { flashcards } from '@/data/flashcards';
 
-type View = 'dashboard' | 'flashcards' | 'quiz' | 'leaderboard' | 'spaced' | 'exam' | 'profile';
+type View = 'dashboard' | 'flashcards' | 'quiz' | 'leaderboard' | 'spaced' | 'exam' | 'profile' | 'admin';
 
 const navItems = [
   { id: 'dashboard' as View, label: 'Dashboard', icon: Home },
