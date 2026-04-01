@@ -173,6 +173,19 @@ const Index = () => {
                     {item.label}
                   </button>
                 ))}
+                {isAdmin && (
+                  <button
+                    onClick={() => handleNavigate('admin')}
+                    className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                      currentView === 'admin'
+                        ? 'bg-destructive/10 text-destructive font-medium'
+                        : 'text-destructive/70 hover:text-destructive hover:bg-destructive/10'
+                    }`}
+                  >
+                    <Shield className="w-4 h-4" />
+                    Admin
+                  </button>
+                )}
               </div>
             </motion.div>
           )}
