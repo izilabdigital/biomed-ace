@@ -12,6 +12,7 @@ import { QuizView } from '@/components/QuizView';
 import { Leaderboard } from '@/components/Leaderboard';
 import { SpacedRepetitionView } from '@/components/SpacedRepetitionView';
 import { ExamSimulator } from '@/components/ExamSimulator';
+import { WordSearchGame } from '@/components/WordSearchGame';
 import { useDynamicFlashcards } from '@/hooks/useDynamicFlashcards';
 
 type View = 'dashboard' | 'flashcards' | 'quiz' | 'leaderboard' | 'spaced' | 'exam' | 'profile' | 'admin';
