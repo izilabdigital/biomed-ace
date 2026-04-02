@@ -15,7 +15,7 @@ import { ExamSimulator } from '@/components/ExamSimulator';
 import { WordSearchGame } from '@/components/WordSearchGame';
 import { useDynamicFlashcards } from '@/hooks/useDynamicFlashcards';
 
-type View = 'dashboard' | 'flashcards' | 'quiz' | 'leaderboard' | 'spaced' | 'exam' | 'profile' | 'admin';
+type View = 'dashboard' | 'flashcards' | 'quiz' | 'leaderboard' | 'spaced' | 'exam' | 'profile' | 'admin' | 'wordsearch';
 
 const navItems = [
   { id: 'dashboard' as View, label: 'Dashboard', icon: Home },
