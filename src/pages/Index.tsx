@@ -23,6 +23,7 @@ const navItems = [
   { id: 'spaced' as View, label: 'Revisão SM-2', icon: RefreshCw },
   { id: 'quiz' as View, label: 'Quiz', icon: Brain },
   { id: 'exam' as View, label: 'Prova', icon: GraduationCap },
+  { id: 'wordsearch' as View, label: 'Caça-Palavras', icon: Search },
   { id: 'leaderboard' as View, label: 'Ranking', icon: Trophy },
   { id: 'profile' as View, label: 'Perfil', icon: User },
 ];
