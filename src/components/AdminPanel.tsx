@@ -138,7 +138,11 @@ export function AdminPanel() {
         throw new Error(data.error);
       }
 
-      toast.success(`${data.cardsGenerated} flashcards gerados para "${moduleName}"!`);
+      const parts = [];
+      if (data.cardsGenerated) parts.push(`${data.cardsGenerated} flashcards`);
+      if (data.questionsGenerated) parts.push(`${data.questionsGenerated} questões`);
+      if (data.wordsGenerated) parts.push(`${data.wordsGenerated} palavras`);
+      toast.success(`Gerados: ${parts.join(', ')} para "${moduleName}"!`);
       setPdfText('');
       setFileName('');
       setModuleName('');
