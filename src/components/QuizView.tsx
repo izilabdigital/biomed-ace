@@ -1,8 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getQuizQuestions } from '@/data/flashcards';
 import { CheckCircle2, XCircle, Trophy, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useDynamicQuestions } from '@/hooks/useDynamicQuestions';
 
 interface QuizViewProps {
   moduleFilter?: string;
@@ -11,13 +12,59 @@ interface QuizViewProps {
   onProgressUpdate?: () => void;
 }
 
+interface QuizQuestion {
+  id: string | number;
+  question: string;
+  options: string[];
+  correctIndex: number;
+  module: string;
+  difficulty: string;
+  explanation?: string | null;
+}
+
 export function QuizView({ moduleFilter, questionCount = 10, userId, onProgressUpdate }: QuizViewProps) {
-  const [questions] = useState(() => getQuizQuestions(questionCount, moduleFilter));
+  const { questions: dynamicQuestions, loading: dynamicLoading } = useDynamicQuestions('quiz', moduleFilter);
+
+  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [score, setScore] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
+
+  useEffect(() => {
+    if (dynamicLoading) return;
+
+    // Merge dynamic questions with static ones
+    const dynamicMapped: QuizQuestion[] = dynamicQuestions.map(q => ({
+      id: q.id,
+      question: q.question_text,
+      options: q.options,
+      correctIndex: q.correct_index,
+      module: q.module,
+      difficulty: q.difficulty,
+      explanation: q.explanation,
+    }));
+
+    const staticQuestions: QuizQuestion[] = getQuizQuestions(questionCount, moduleFilter).map(q => ({
+      id: q.id,
+      question: q.question,
+      options: q.options,
+      correctIndex: q.correctIndex,
+      module: q.module,
+      difficulty: q.difficulty,
+    }));
+
+    // Prioritize dynamic questions, fill remainder with static
+    const combined = [...dynamicMapped];
+    const remaining = questionCount - combined.length;
+    if (remaining > 0) {
+      combined.push(...staticQuestions.slice(0, remaining));
+    }
+
+    // Shuffle
+    setQuestions(combined.sort(() => Math.random() - 0.5).slice(0, questionCount));
+  }, [dynamicLoading, dynamicQuestions, questionCount, moduleFilter]);
 
   const question = questions[currentIndex];
 
@@ -42,7 +89,6 @@ export function QuizView({ moduleFilter, questionCount = 10, userId, onProgressU
       points_earned: pointsEarned,
     });
 
-    // Update profile
     const { data: prof } = await supabase.from('profiles')
       .select('quizzes_completed, total_points')
       .eq('user_id', userId)
@@ -64,11 +110,18 @@ export function QuizView({ moduleFilter, questionCount = 10, userId, onProgressU
       setSelectedIndex(null);
       setFeedback(null);
     } else {
-      const finalScore = score + (feedback === 'correct' ? 0 : 0);
       setIsFinished(true);
-      saveQuizResult(finalScore);
+      saveQuizResult(score);
     }
   };
+
+  if (dynamicLoading || questions.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-pulse text-muted-foreground">Carregando quiz...</div>
+      </div>
+    );
+  }
 
   if (isFinished) {
     const percentage = Math.round((score / questions.length) * 100);
@@ -124,13 +177,18 @@ export function QuizView({ moduleFilter, questionCount = 10, userId, onProgressU
           </div>
 
           {feedback && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`mt-6 flex items-center gap-3 p-4 rounded-xl ${feedback === 'correct' ? 'bg-success-light' : 'bg-error-light'}`}>
-              {feedback === 'correct' ? <CheckCircle2 className="w-5 h-5 text-accent flex-shrink-0" /> : <XCircle className="w-5 h-5 text-destructive flex-shrink-0" />}
-              <span className="text-sm text-foreground">{feedback === 'correct' ? 'Correto! Muito bem!' : 'Incorreto. Revise este conteúdo.'}</span>
-              <button onClick={handleNext} className="ml-auto flex items-center gap-1 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium">
-                {currentIndex < questions.length - 1 ? 'Próxima' : 'Resultado'}
-                <ArrowRight className="w-4 h-4" />
-              </button>
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`mt-6 flex flex-col gap-2 p-4 rounded-xl ${feedback === 'correct' ? 'bg-success-light' : 'bg-error-light'}`}>
+              <div className="flex items-center gap-3">
+                {feedback === 'correct' ? <CheckCircle2 className="w-5 h-5 text-accent flex-shrink-0" /> : <XCircle className="w-5 h-5 text-destructive flex-shrink-0" />}
+                <span className="text-sm text-foreground">{feedback === 'correct' ? 'Correto! Muito bem!' : 'Incorreto.'}</span>
+                <button onClick={handleNext} className="ml-auto flex items-center gap-1 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium">
+                  {currentIndex < questions.length - 1 ? 'Próxima' : 'Resultado'}
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+              {question.explanation && (
+                <p className="text-xs text-muted-foreground mt-1 pl-8">{question.explanation}</p>
+              )}
             </motion.div>
           )}
         </motion.div>
