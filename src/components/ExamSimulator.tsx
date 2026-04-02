@@ -36,6 +36,7 @@ function formatTime(seconds: number) {
 }
 
 export function ExamSimulator({ moduleFilter, userId, onProgressUpdate }: ExamSimulatorProps) {
+  const { questions: dynamicExamQuestions } = useDynamicQuestions('exam', moduleFilter);
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
   const [questions, setQuestions] = useState<ReturnType<typeof getQuizQuestions>>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
