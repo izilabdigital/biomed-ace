@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getQuizQuestions } from '@/data/flashcards';
 import { CheckCircle2, XCircle, Trophy, ArrowRight, Clock, Flame, AlertTriangle, Zap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useDynamicQuestions } from '@/hooks/useDynamicQuestions';
 
 interface ExamSimulatorProps {
   moduleFilter?: string;
@@ -35,8 +36,9 @@ function formatTime(seconds: number) {
 }
 
 export function ExamSimulator({ moduleFilter, userId, onProgressUpdate }: ExamSimulatorProps) {
+  const { questions: dynamicExamQuestions } = useDynamicQuestions('exam', moduleFilter);
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
-  const [questions, setQuestions] = useState<ReturnType<typeof getQuizQuestions>>([]);
+  const [questions, setQuestions] = useState<{ id: any; question: string; options: string[]; correctIndex: number; module: string; difficulty: string; explanation?: string | null }[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [score, setScore] = useState(0);
@@ -65,17 +67,34 @@ export function ExamSimulator({ moduleFilter, userId, onProgressUpdate }: ExamSi
 
   const startExam = (diff: Difficulty) => {
     const config = difficultyConfig[diff];
-    let filteredQuestions: ReturnType<typeof getQuizQuestions>;
+
+    // Map dynamic exam questions into the same shape
+    const dynamicMapped = dynamicExamQuestions.map(q => ({
+      id: q.id as any,
+      question: q.question_text,
+      options: q.options,
+      correctIndex: q.correct_index,
+      module: q.module,
+      difficulty: q.difficulty,
+      explanation: q.explanation,
+    }));
+
+    let filteredQuestions: typeof dynamicMapped;
+
+    const mapStatic = (qs: ReturnType<typeof getQuizQuestions>) =>
+      qs.map(q => ({ ...q, explanation: null as string | null }));
 
     if (diff === 'all') {
-      filteredQuestions = getQuizQuestions(config.questions, moduleFilter);
+      const staticQ = mapStatic(getQuizQuestions(config.questions, moduleFilter));
+      filteredQuestions = [...dynamicMapped, ...staticQ].sort(() => Math.random() - 0.5).slice(0, config.questions);
     } else {
-      // Get questions of specified difficulty
-      const allQ = getQuizQuestions(config.questions * 3, moduleFilter);
-      filteredQuestions = allQ.filter(q => q.difficulty === diff).slice(0, config.questions);
-      // Pad with random if not enough
+      const allDynamic = dynamicMapped.filter(q => q.difficulty === diff);
+      const allStatic = mapStatic(getQuizQuestions(config.questions * 3, moduleFilter)).filter(q => q.difficulty === diff);
+      filteredQuestions = [...allDynamic, ...allStatic].sort(() => Math.random() - 0.5).slice(0, config.questions);
+
       if (filteredQuestions.length < config.questions) {
-        const remaining = allQ.filter(q => !filteredQuestions.find(f => f.id === q.id));
+        const remaining = mapStatic(getQuizQuestions(config.questions * 3, moduleFilter))
+          .filter(q => !filteredQuestions.find(f => f.id === q.id));
         filteredQuestions = [...filteredQuestions, ...remaining.slice(0, config.questions - filteredQuestions.length)];
       }
     }

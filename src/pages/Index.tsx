@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, BookOpen, Brain, Trophy, ArrowLeft, Menu, X, RefreshCw, User, GraduationCap, Shield } from 'lucide-react';
+import { Home, BookOpen, Brain, Trophy, ArrowLeft, Menu, X, RefreshCw, User, GraduationCap, Shield, Search } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
 import { SettingsPanel } from '@/components/SettingsPanel';
@@ -12,9 +12,10 @@ import { QuizView } from '@/components/QuizView';
 import { Leaderboard } from '@/components/Leaderboard';
 import { SpacedRepetitionView } from '@/components/SpacedRepetitionView';
 import { ExamSimulator } from '@/components/ExamSimulator';
+import { WordSearchGame } from '@/components/WordSearchGame';
 import { useDynamicFlashcards } from '@/hooks/useDynamicFlashcards';
 
-type View = 'dashboard' | 'flashcards' | 'quiz' | 'leaderboard' | 'spaced' | 'exam' | 'profile' | 'admin';
+type View = 'dashboard' | 'flashcards' | 'quiz' | 'leaderboard' | 'spaced' | 'exam' | 'profile' | 'admin' | 'wordsearch';
 
 const navItems = [
   { id: 'dashboard' as View, label: 'Dashboard', icon: Home },
@@ -22,6 +23,7 @@ const navItems = [
   { id: 'spaced' as View, label: 'Revisão SM-2', icon: RefreshCw },
   { id: 'quiz' as View, label: 'Quiz', icon: Brain },
   { id: 'exam' as View, label: 'Prova', icon: GraduationCap },
+  { id: 'wordsearch' as View, label: 'Caça-Palavras', icon: Search },
   { id: 'leaderboard' as View, label: 'Ranking', icon: Trophy },
   { id: 'profile' as View, label: 'Perfil', icon: User },
 ];
@@ -90,6 +92,8 @@ const Index = () => {
         return <Leaderboard currentUserId={user.id} />;
       case 'profile':
         return <SettingsPanel darkMode={darkMode} onToggleDarkMode={() => setDarkMode(d => !d)} />;
+      case 'wordsearch':
+        return <WordSearchGame moduleFilter={moduleFilter} />;
       case 'admin':
         return <AdminPanel />;
     }
