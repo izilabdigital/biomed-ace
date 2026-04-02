@@ -67,17 +67,32 @@ export function ExamSimulator({ moduleFilter, userId, onProgressUpdate }: ExamSi
 
   const startExam = (diff: Difficulty) => {
     const config = difficultyConfig[diff];
-    let filteredQuestions: ReturnType<typeof getQuizQuestions>;
+
+    // Map dynamic exam questions into the same shape
+    const dynamicMapped = dynamicExamQuestions.map(q => ({
+      id: q.id as any,
+      question: q.question_text,
+      options: q.options,
+      correctIndex: q.correct_index,
+      module: q.module,
+      difficulty: q.difficulty,
+      explanation: q.explanation,
+    }));
+
+    let filteredQuestions: typeof dynamicMapped;
 
     if (diff === 'all') {
-      filteredQuestions = getQuizQuestions(config.questions, moduleFilter);
+      const staticQ = getQuizQuestions(config.questions, moduleFilter);
+      filteredQuestions = [...dynamicMapped, ...staticQ].sort(() => Math.random() - 0.5).slice(0, config.questions);
     } else {
-      // Get questions of specified difficulty
-      const allQ = getQuizQuestions(config.questions * 3, moduleFilter);
-      filteredQuestions = allQ.filter(q => q.difficulty === diff).slice(0, config.questions);
+      const allDynamic = dynamicMapped.filter(q => q.difficulty === diff);
+      const allStatic = getQuizQuestions(config.questions * 3, moduleFilter).filter(q => q.difficulty === diff);
+      filteredQuestions = [...allDynamic, ...allStatic].sort(() => Math.random() - 0.5).slice(0, config.questions);
+
       // Pad with random if not enough
       if (filteredQuestions.length < config.questions) {
-        const remaining = allQ.filter(q => !filteredQuestions.find(f => f.id === q.id));
+        const remaining = getQuizQuestions(config.questions * 3, moduleFilter)
+          .filter(q => !filteredQuestions.find(f => f.id === q.id));
         filteredQuestions = [...filteredQuestions, ...remaining.slice(0, config.questions - filteredQuestions.length)];
       }
     }
