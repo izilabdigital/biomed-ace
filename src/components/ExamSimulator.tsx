@@ -81,17 +81,19 @@ export function ExamSimulator({ moduleFilter, userId, onProgressUpdate }: ExamSi
 
     let filteredQuestions: typeof dynamicMapped;
 
+    const mapStatic = (qs: ReturnType<typeof getQuizQuestions>) =>
+      qs.map(q => ({ ...q, explanation: null as string | null }));
+
     if (diff === 'all') {
-      const staticQ = getQuizQuestions(config.questions, moduleFilter);
+      const staticQ = mapStatic(getQuizQuestions(config.questions, moduleFilter));
       filteredQuestions = [...dynamicMapped, ...staticQ].sort(() => Math.random() - 0.5).slice(0, config.questions);
     } else {
       const allDynamic = dynamicMapped.filter(q => q.difficulty === diff);
-      const allStatic = getQuizQuestions(config.questions * 3, moduleFilter).filter(q => q.difficulty === diff);
+      const allStatic = mapStatic(getQuizQuestions(config.questions * 3, moduleFilter)).filter(q => q.difficulty === diff);
       filteredQuestions = [...allDynamic, ...allStatic].sort(() => Math.random() - 0.5).slice(0, config.questions);
 
-      // Pad with random if not enough
       if (filteredQuestions.length < config.questions) {
-        const remaining = getQuizQuestions(config.questions * 3, moduleFilter)
+        const remaining = mapStatic(getQuizQuestions(config.questions * 3, moduleFilter))
           .filter(q => !filteredQuestions.find(f => f.id === q.id));
         filteredQuestions = [...filteredQuestions, ...remaining.slice(0, config.questions - filteredQuestions.length)];
       }
