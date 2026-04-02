@@ -125,6 +125,51 @@ export type Database = {
         }
         Relationships: []
       }
+      dynamic_questions: {
+        Row: {
+          correct_index: number
+          created_at: string
+          created_by: string
+          difficulty: string
+          explanation: string | null
+          id: string
+          module: string
+          module_color: string
+          options: Json
+          question_text: string
+          question_type: string
+          updated_at: string
+        }
+        Insert: {
+          correct_index?: number
+          created_at?: string
+          created_by: string
+          difficulty?: string
+          explanation?: string | null
+          id?: string
+          module: string
+          module_color?: string
+          options?: Json
+          question_text: string
+          question_type?: string
+          updated_at?: string
+        }
+        Update: {
+          correct_index?: number
+          created_at?: string
+          created_by?: string
+          difficulty?: string
+          explanation?: string | null
+          id?: string
+          module?: string
+          module_color?: string
+          options?: Json
+          question_text?: string
+          question_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       friendships: {
         Row: {
           addressee_id: string
@@ -251,6 +296,36 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      word_search_words: {
+        Row: {
+          created_at: string
+          created_by: string
+          explanation: string
+          id: string
+          module: string
+          module_color: string
+          word: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          explanation: string
+          id?: string
+          module: string
+          module_color?: string
+          word: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          explanation?: string
+          id?: string
+          module?: string
+          module_color?: string
+          word?: string
         }
         Relationships: []
       }
