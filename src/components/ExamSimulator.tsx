@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getQuizQuestions } from '@/data/flashcards';
 import { CheckCircle2, XCircle, Trophy, ArrowRight, Clock, Flame, AlertTriangle, Zap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useDynamicQuestions } from '@/hooks/useDynamicQuestions';
 
 interface ExamSimulatorProps {
   moduleFilter?: string;
