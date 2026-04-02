@@ -155,15 +155,16 @@ export function AdminPanel() {
   };
 
   const handleDeleteModule = async (module: string) => {
-    const { error } = await supabase
-      .from('dynamic_flashcards')
-      .delete()
-      .eq('module', module);
+    const [r1, r2, r3] = await Promise.all([
+      supabase.from('dynamic_flashcards').delete().eq('module', module),
+      supabase.from('dynamic_questions').delete().eq('module', module),
+      supabase.from('word_search_words').delete().eq('module', module),
+    ]);
 
-    if (error) {
+    if (r1.error || r2.error || r3.error) {
       toast.error('Erro ao excluir módulo');
     } else {
-      toast.success(`Módulo "${module}" excluído`);
+      toast.success(`Módulo "${module}" excluído (cards, questões e palavras)`);
       fetchData();
     }
   };
