@@ -222,7 +222,7 @@ export function AdminPanel() {
                         <>
                           <CheckCircle className="w-8 h-8 text-green-500 mb-2" />
                           <span className="text-sm text-foreground font-medium">{fileName}</span>
-                          <span className="text-xs text-muted-foreground">{fileText.length.toLocaleString()} caracteres</span>
+                          <span className="text-xs text-muted-foreground">{selectedFile ? `${(selectedFile.size / 1024).toFixed(1)} KB` : ''}</span>
                         </>
                       ) : (
                         <>
