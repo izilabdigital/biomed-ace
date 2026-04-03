@@ -75,14 +75,22 @@ export function AdminPanel() {
     if (!file) return;
 
     setFileName(file.name);
+    setSelectedFile(file);
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const text = reader.result as string;
-      setFileText(text);
-      toast.success(`Arquivo "${file.name}" carregado com sucesso`);
-    };
-    reader.readAsText(file);
+    const textExtensions = ['.txt', '.md', '.csv', '.text'];
+    const isTextFile = textExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
+
+    if (isTextFile) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setFilePreview(reader.result as string);
+      };
+      reader.readAsText(file);
+    } else {
+      setFilePreview('');
+    }
+
+    toast.success(`Arquivo "${file.name}" carregado com sucesso`);
   };
 
   const handleConvert = async () => {
