@@ -281,7 +281,7 @@ export function AdminPanel() {
                 {/* Send Button */}
                 <button
                   onClick={handleConvert}
-                  disabled={processing || !fileText || !moduleName}
+                  disabled={processing || !selectedFile || !moduleName}
                   className="w-full py-3 rounded-xl bg-destructive text-white font-semibold hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
                 >
                   {processing ? (
