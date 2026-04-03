@@ -269,11 +269,11 @@ export function AdminPanel() {
                 </div>
 
                 {/* Preview */}
-                {fileText && (
+                {filePreview && (
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">Prévia do conteúdo</label>
                     <div className="p-3 rounded-xl bg-secondary/50 max-h-40 overflow-y-auto">
-                      <p className="text-xs text-muted-foreground whitespace-pre-wrap">{fileText.substring(0, 2000)}{fileText.length > 2000 ? '...' : ''}</p>
+                      <p className="text-xs text-muted-foreground whitespace-pre-wrap">{filePreview.substring(0, 2000)}{filePreview.length > 2000 ? '...' : ''}</p>
                     </div>
                   </div>
                 )}
