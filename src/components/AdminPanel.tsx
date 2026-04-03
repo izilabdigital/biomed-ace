@@ -42,7 +42,8 @@ export function AdminPanel() {
   const [loading, setLoading] = useState(false);
   const [moduleName, setModuleName] = useState('');
   const [moduleColor, setModuleColor] = useState('primary');
-  const [fileText, setFileText] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState('');
   const [fileName, setFileName] = useState('');
   const [processing, setProcessing] = useState(false);
   const [stats, setStats] = useState({ totalCards: 0, totalModules: 0, totalUsers: 0 });
