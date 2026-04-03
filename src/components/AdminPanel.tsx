@@ -105,6 +105,10 @@ export function AdminPanel() {
 
     setProcessing(true);
     try {
+<<<<<<< HEAD
+      const webhookUrl = 'https://n8n-n8n.xwskpb.easypanel.host/webhook-test/biocore-appz';
+      
+=======
       const webhookUrl = 'https://n8n-n8n.xwskpb.easypanel.host/webhook/biocore-appz';
 
       const formData = new FormData();
@@ -114,6 +118,7 @@ export function AdminPanel() {
       formData.append('fileName', fileName);
       formData.append('userId', user?.id || '');
 
+>>>>>>> 8f327c3573e1629cf378b96ae29b65ab11557967
       const response = await fetch(webhookUrl, {
         method: 'POST',
         body: formData,
