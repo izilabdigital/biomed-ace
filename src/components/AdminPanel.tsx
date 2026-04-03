@@ -98,7 +98,7 @@ export function AdminPanel() {
       toast.error('Informe o nome do módulo');
       return;
     }
-    if (!fileText.trim()) {
+    if (!selectedFile) {
       toast.error('Carregue um arquivo primeiro');
       return;
     }
@@ -106,17 +106,17 @@ export function AdminPanel() {
     setProcessing(true);
     try {
       const webhookUrl = 'https://n8n-n8n.xwskpb.easypanel.host/webhook/biocore-appz';
-      
+
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('moduleName', moduleName.trim());
+      formData.append('moduleColor', moduleColor);
+      formData.append('fileName', fileName);
+      formData.append('userId', user?.id || '');
+
       const response = await fetch(webhookUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: fileText,
-          moduleName: moduleName.trim(),
-          moduleColor,
-          fileName,
-          userId: user?.id,
-        }),
+        body: formData,
       });
 
       if (!response.ok) {
@@ -124,7 +124,8 @@ export function AdminPanel() {
       }
 
       toast.success(`Arquivo "${fileName}" enviado para processamento do módulo "${moduleName}"!`);
-      setFileText('');
+      setSelectedFile(null);
+      setFilePreview('');
       setFileName('');
       setModuleName('');
       fetchData();
