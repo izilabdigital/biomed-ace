@@ -32,6 +32,8 @@ const MODULE_COLORS = [
   { value: 'destructive', label: 'Vermelho', class: 'bg-destructive' },
 ];
 
+const ACCEPTED_FILE_TYPES = '.txt,.doc,.docx,.rtf,.odt,.md,.csv,.text';
+
 export function AdminPanel() {
   const { user, session } = useAuth();
   const [activeTab, setActiveTab] = useState<'upload' | 'content' | 'stats'>('upload');
@@ -40,7 +42,7 @@ export function AdminPanel() {
   const [loading, setLoading] = useState(false);
   const [moduleName, setModuleName] = useState('');
   const [moduleColor, setModuleColor] = useState('primary');
-  const [pdfText, setPdfText] = useState('');
+  const [fileText, setFileText] = useState('');
   const [fileName, setFileName] = useState('');
   const [processing, setProcessing] = useState(false);
   const [stats, setStats] = useState({ totalCards: 0, totalModules: 0, totalUsers: 0 });
@@ -73,44 +75,13 @@ export function AdminPanel() {
 
     setFileName(file.name);
 
-    // Extract text from PDF using FileReader
     const reader = new FileReader();
-    reader.onload = async () => {
-      const text = await extractTextFromPdf(reader.result as ArrayBuffer);
-      setPdfText(text);
-      toast.success(`PDF "${file.name}" carregado com sucesso`);
+    reader.onload = () => {
+      const text = reader.result as string;
+      setFileText(text);
+      toast.success(`Arquivo "${file.name}" carregado com sucesso`);
     };
-    reader.readAsArrayBuffer(file);
-  };
-
-  const extractTextFromPdf = async (buffer: ArrayBuffer): Promise<string> => {
-    // Simple PDF text extraction - handles basic text content
-    const uint8Array = new Uint8Array(buffer);
-    const text = new TextDecoder('latin1').decode(uint8Array);
-    
-    // Extract text between stream markers (simplified)
-    const textParts: string[] = [];
-    const streamRegex = /stream\s*([\s\S]*?)\s*endstream/g;
-    let match;
-    while ((match = streamRegex.exec(text)) !== null) {
-      const content = match[1];
-      // Extract text operators (Tj, TJ, ')
-      const tjRegex = /\((.*?)\)\s*Tj/g;
-      let tjMatch;
-      while ((tjMatch = tjRegex.exec(content)) !== null) {
-        textParts.push(tjMatch[1]);
-      }
-    }
-    
-    // If simple extraction fails, just get readable ASCII
-    if (textParts.length === 0) {
-      const readableText = text.replace(/[^\x20-\x7E\xC0-\xFF\n\r]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-      return readableText.substring(0, 50000);
-    }
-    
-    return textParts.join(' ');
+    reader.readAsText(file);
   };
 
   const handleConvert = async () => {
@@ -118,37 +89,38 @@ export function AdminPanel() {
       toast.error('Informe o nome do módulo');
       return;
     }
-    if (!pdfText.trim()) {
-      toast.error('Carregue um PDF primeiro');
+    if (!fileText.trim()) {
+      toast.error('Carregue um arquivo primeiro');
       return;
     }
 
     setProcessing(true);
     try {
-      const response = await supabase.functions.invoke('convert-pdf', {
-        body: { pdfText, moduleName, moduleColor },
+      const webhookUrl = 'https://n8n-n8n.xwskpb.easypanel.host/webhook/biocore-appz';
+      
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: fileText,
+          moduleName: moduleName.trim(),
+          moduleColor,
+          fileName,
+          userId: user?.id,
+        }),
       });
 
-      if (response.error) {
-        throw new Error(response.error.message || 'Erro ao converter');
+      if (!response.ok) {
+        throw new Error(`Erro do webhook: ${response.status}`);
       }
 
-      const data = response.data;
-      if (data.error) {
-        throw new Error(data.error);
-      }
-
-      const parts = [];
-      if (data.cardsGenerated) parts.push(`${data.cardsGenerated} flashcards`);
-      if (data.questionsGenerated) parts.push(`${data.questionsGenerated} questões`);
-      if (data.wordsGenerated) parts.push(`${data.wordsGenerated} palavras`);
-      toast.success(`Gerados: ${parts.join(', ')} para "${moduleName}"!`);
-      setPdfText('');
+      toast.success(`Arquivo "${fileName}" enviado para processamento do módulo "${moduleName}"!`);
+      setFileText('');
       setFileName('');
       setModuleName('');
       fetchData();
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao processar PDF');
+      toast.error(err.message || 'Erro ao enviar arquivo');
     } finally {
       setProcessing(false);
     }
@@ -176,7 +148,7 @@ export function AdminPanel() {
   }, {} as Record<string, DynamicFlashcard[]>);
 
   const tabs = [
-    { id: 'upload' as const, label: 'Upload PDF', icon: Upload },
+    { id: 'upload' as const, label: 'Upload Arquivo', icon: Upload },
     { id: 'content' as const, label: 'Conteúdos', icon: BookOpen },
     { id: 'stats' as const, label: 'Estatísticas', icon: BarChart3 },
   ];
@@ -227,29 +199,29 @@ export function AdminPanel() {
             <div className="bg-card rounded-2xl border border-border p-6 shadow-card">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <FileText className="w-5 h-5 text-destructive" />
-                Converter PDF em Flashcards
+                Enviar Arquivo de Texto
               </h2>
 
               <div className="space-y-4">
                 {/* File Upload */}
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Arquivo PDF</label>
+                  <label className="block text-sm font-medium text-foreground mb-2">Arquivo (TXT, DOC, DOCX, RTF, MD, CSV...)</label>
                   <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-destructive/50 hover:bg-destructive/5 transition-colors">
                     <div className="flex flex-col items-center">
                       {fileName ? (
                         <>
                           <CheckCircle className="w-8 h-8 text-green-500 mb-2" />
                           <span className="text-sm text-foreground font-medium">{fileName}</span>
-                          <span className="text-xs text-muted-foreground">{pdfText.length.toLocaleString()} caracteres extraídos</span>
+                          <span className="text-xs text-muted-foreground">{fileText.length.toLocaleString()} caracteres</span>
                         </>
                       ) : (
                         <>
                           <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-                          <span className="text-sm text-muted-foreground">Clique para selecionar um PDF</span>
+                          <span className="text-sm text-muted-foreground">Clique para selecionar um arquivo de texto</span>
                         </>
                       )}
                     </div>
-                    <input type="file" accept=".pdf" className="hidden" onChange={handleFileUpload} />
+                    <input type="file" accept={ACCEPTED_FILE_TYPES} className="hidden" onChange={handleFileUpload} />
                   </label>
                 </div>
 
@@ -286,21 +258,31 @@ export function AdminPanel() {
                   </div>
                 </div>
 
-                {/* Convert Button */}
+                {/* Preview */}
+                {fileText && (
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">Prévia do conteúdo</label>
+                    <div className="p-3 rounded-xl bg-secondary/50 max-h-40 overflow-y-auto">
+                      <p className="text-xs text-muted-foreground whitespace-pre-wrap">{fileText.substring(0, 2000)}{fileText.length > 2000 ? '...' : ''}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Send Button */}
                 <button
                   onClick={handleConvert}
-                  disabled={processing || !pdfText || !moduleName}
+                  disabled={processing || !fileText || !moduleName}
                   className="w-full py-3 rounded-xl bg-destructive text-white font-semibold hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
                 >
                   {processing ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      Processando com IA...
+                      Enviando para processamento...
                     </>
                   ) : (
                     <>
                       <Plus className="w-5 h-5" />
-                      Gerar Flashcards
+                      Enviar para Processar
                     </>
                   )}
                 </button>
@@ -350,7 +332,7 @@ export function AdminPanel() {
               <div className="bg-card rounded-2xl border border-border p-12 text-center">
                 <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground">Nenhum conteúdo dinâmico criado</p>
-                <p className="text-sm text-muted-foreground mt-1">Use a aba Upload para adicionar conteúdos via PDF</p>
+                <p className="text-sm text-muted-foreground mt-1">Use a aba Upload para adicionar conteúdos</p>
               </div>
             ) : (
               Object.entries(groupedByModule).map(([module, cards]) => (

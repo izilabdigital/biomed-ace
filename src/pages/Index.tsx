@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, BookOpen, Brain, Trophy, ArrowLeft, Menu, X, RefreshCw, User, GraduationCap, Shield, Search } from 'lucide-react';
+import { Home, BookOpen, Brain, Trophy, ArrowLeft, Menu, X, User, GraduationCap, Shield, Search } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
 import { SettingsPanel } from '@/components/SettingsPanel';
@@ -10,17 +10,15 @@ import { Dashboard } from '@/components/Dashboard';
 import { FlashcardView } from '@/components/FlashcardView';
 import { QuizView } from '@/components/QuizView';
 import { Leaderboard } from '@/components/Leaderboard';
-import { SpacedRepetitionView } from '@/components/SpacedRepetitionView';
 import { ExamSimulator } from '@/components/ExamSimulator';
 import { WordSearchGame } from '@/components/WordSearchGame';
 import { useDynamicFlashcards } from '@/hooks/useDynamicFlashcards';
 
-type View = 'dashboard' | 'flashcards' | 'quiz' | 'leaderboard' | 'spaced' | 'exam' | 'profile' | 'admin' | 'wordsearch';
+type View = 'dashboard' | 'flashcards' | 'quiz' | 'leaderboard' | 'exam' | 'profile' | 'admin' | 'wordsearch';
 
 const navItems = [
-  { id: 'dashboard' as View, label: 'Dashboard', icon: Home },
+  { id: 'dashboard' as View, label: 'Início', icon: Home },
   { id: 'flashcards' as View, label: 'Flashcards', icon: BookOpen },
-  { id: 'spaced' as View, label: 'Revisão SM-2', icon: RefreshCw },
   { id: 'quiz' as View, label: 'Quiz', icon: Brain },
   { id: 'exam' as View, label: 'Prova', icon: GraduationCap },
   { id: 'wordsearch' as View, label: 'Caça-Palavras', icon: Search },
@@ -82,8 +80,6 @@ const Index = () => {
         return <Dashboard onNavigate={handleNavigate} stats={stats} />;
       case 'flashcards':
         return <FlashcardView cards={filteredCards} userId={user.id} onProgressUpdate={refreshProfile} />;
-      case 'spaced':
-        return <SpacedRepetitionView userId={user.id} onProgressUpdate={refreshProfile} />;
       case 'quiz':
         return <QuizView moduleFilter={moduleFilter} userId={user.id} onProgressUpdate={refreshProfile} />;
       case 'exam':
