@@ -42,8 +42,7 @@ export function AdminPanel() {
   const [loading, setLoading] = useState(false);
   const [moduleName, setModuleName] = useState('');
   const [moduleColor, setModuleColor] = useState('primary');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [filePreview, setFilePreview] = useState('');
+  const [fileText, setFileText] = useState('');
   const [fileName, setFileName] = useState('');
   const [processing, setProcessing] = useState(false);
   const [stats, setStats] = useState({ totalCards: 0, totalModules: 0, totalUsers: 0 });
@@ -75,22 +74,14 @@ export function AdminPanel() {
     if (!file) return;
 
     setFileName(file.name);
-    setSelectedFile(file);
 
-    const textExtensions = ['.txt', '.md', '.csv', '.text'];
-    const isTextFile = textExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
-
-    if (isTextFile) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setFilePreview(reader.result as string);
-      };
-      reader.readAsText(file);
-    } else {
-      setFilePreview('');
-    }
-
-    toast.success(`Arquivo "${file.name}" carregado com sucesso`);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = reader.result as string;
+      setFileText(text);
+      toast.success(`Arquivo "${file.name}" carregado com sucesso`);
+    };
+    reader.readAsText(file);
   };
 
   const handleConvert = async () => {
@@ -98,30 +89,25 @@ export function AdminPanel() {
       toast.error('Informe o nome do módulo');
       return;
     }
-    if (!selectedFile) {
+    if (!fileText.trim()) {
       toast.error('Carregue um arquivo primeiro');
       return;
     }
 
     setProcessing(true);
     try {
-<<<<<<< HEAD
       const webhookUrl = 'https://n8n-n8n.xwskpb.easypanel.host/webhook-test/biocore-appz';
       
-=======
-      const webhookUrl = 'https://n8n-n8n.xwskpb.easypanel.host/webhook/biocore-appz';
-
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-      formData.append('moduleName', moduleName.trim());
-      formData.append('moduleColor', moduleColor);
-      formData.append('fileName', fileName);
-      formData.append('userId', user?.id || '');
-
->>>>>>> 8f327c3573e1629cf378b96ae29b65ab11557967
       const response = await fetch(webhookUrl, {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: fileText,
+          moduleName: moduleName.trim(),
+          moduleColor,
+          fileName,
+          userId: user?.id,
+        }),
       });
 
       if (!response.ok) {
@@ -129,8 +115,7 @@ export function AdminPanel() {
       }
 
       toast.success(`Arquivo "${fileName}" enviado para processamento do módulo "${moduleName}"!`);
-      setSelectedFile(null);
-      setFilePreview('');
+      setFileText('');
       setFileName('');
       setModuleName('');
       fetchData();
@@ -227,7 +212,7 @@ export function AdminPanel() {
                         <>
                           <CheckCircle className="w-8 h-8 text-green-500 mb-2" />
                           <span className="text-sm text-foreground font-medium">{fileName}</span>
-                          <span className="text-xs text-muted-foreground">{selectedFile ? `${(selectedFile.size / 1024).toFixed(1)} KB` : ''}</span>
+                          <span className="text-xs text-muted-foreground">{fileText.length.toLocaleString()} caracteres</span>
                         </>
                       ) : (
                         <>
@@ -274,11 +259,11 @@ export function AdminPanel() {
                 </div>
 
                 {/* Preview */}
-                {filePreview && (
+                {fileText && (
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">Prévia do conteúdo</label>
                     <div className="p-3 rounded-xl bg-secondary/50 max-h-40 overflow-y-auto">
-                      <p className="text-xs text-muted-foreground whitespace-pre-wrap">{filePreview.substring(0, 2000)}{filePreview.length > 2000 ? '...' : ''}</p>
+                      <p className="text-xs text-muted-foreground whitespace-pre-wrap">{fileText.substring(0, 2000)}{fileText.length > 2000 ? '...' : ''}</p>
                     </div>
                   </div>
                 )}
@@ -286,7 +271,7 @@ export function AdminPanel() {
                 {/* Send Button */}
                 <button
                   onClick={handleConvert}
-                  disabled={processing || !selectedFile || !moduleName}
+                  disabled={processing || !fileText || !moduleName}
                   className="w-full py-3 rounded-xl bg-destructive text-white font-semibold hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
                 >
                   {processing ? (
