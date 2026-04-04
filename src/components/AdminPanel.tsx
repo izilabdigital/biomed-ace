@@ -451,6 +451,49 @@ export function AdminPanel() {
             </div>
           </motion.div>
         )}
+
+        {activeTab === 'webhook' && (
+          <motion.div key="webhook" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+            <div className="bg-card rounded-2xl border border-border p-6 shadow-card max-w-xl">
+              <h2 className="text-lg font-bold text-foreground mb-1">Configuração do Webhook</h2>
+              <p className="text-sm text-muted-foreground mb-4">URL do webhook do n8n para processamento de conteúdo com IA.</p>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">URL do Webhook</label>
+                  <input
+                    type="url"
+                    value={webhookUrl}
+                    onChange={(e) => setWebhookUrl(e.target.value)}
+                    placeholder="https://..."
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setWebhookUrlStorage(webhookUrl);
+                      toast.success('Webhook salvo com sucesso!');
+                    }}
+                    className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+                  >
+                    Salvar
+                  </button>
+                  <button
+                    onClick={() => {
+                      setWebhookUrl(DEFAULT_WEBHOOK_URL);
+                      setWebhookUrlStorage(DEFAULT_WEBHOOK_URL);
+                      toast.success('Webhook restaurado ao padrão.');
+                    }}
+                    className="px-4 py-2 rounded-lg bg-secondary text-secondary-foreground text-sm font-medium hover:bg-secondary/80 transition-colors"
+                  >
+                    Restaurar Padrão
+                  </button>
+                </div>
+                <p className="text-xs text-muted-foreground">Padrão: {DEFAULT_WEBHOOK_URL}</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   );
