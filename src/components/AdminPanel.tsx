@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, FileText, Trash2, Plus, CheckCircle, AlertCircle, Loader2, BookOpen, BarChart3, Users, Settings } from 'lucide-react';
+import { Upload, FileText, Trash2, Plus, CheckCircle, Loader2, BookOpen, BarChart3, Users, Settings, Layers } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -25,6 +25,12 @@ interface ContentUpload {
   created_at: string;
 }
 
+interface StudyModule {
+  id: string;
+  name: string;
+  color: string;
+}
+
 const MODULE_COLORS = [
   { value: 'primary', label: 'Azul', class: 'bg-primary' },
   { value: 'accent', label: 'Verde', class: 'bg-accent' },
@@ -33,35 +39,43 @@ const MODULE_COLORS = [
 ];
 
 const ACCEPTED_FILE_TYPES = '.txt,.doc,.docx,.rtf,.odt,.md,.csv,.text';
+const WEBHOOK_URL = 'https://n8n-n8n.xwskpb.easypanel.host/webhook/biocore-appz';
 
 export function AdminPanel() {
-  const { user, session } = useAuth();
-  const [activeTab, setActiveTab] = useState<'upload' | 'content' | 'stats'>('upload');
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<'modules' | 'upload' | 'content' | 'stats'>('modules');
   const [flashcards, setFlashcards] = useState<DynamicFlashcard[]>([]);
   const [uploads, setUploads] = useState<ContentUpload[]>([]);
+  const [studyModules, setStudyModules] = useState<StudyModule[]>([]);
   const [loading, setLoading] = useState(false);
-  const [moduleName, setModuleName] = useState('');
-  const [moduleColor, setModuleColor] = useState('primary');
   const [fileText, setFileText] = useState('');
   const [fileName, setFileName] = useState('');
   const [processing, setProcessing] = useState(false);
   const [stats, setStats] = useState({ totalCards: 0, totalModules: 0, totalUsers: 0 });
 
+  // New module form
+  const [newModuleName, setNewModuleName] = useState('');
+  const [newModuleColor, setNewModuleColor] = useState('primary');
+  // Upload module selection
+  const [selectedModuleId, setSelectedModuleId] = useState('');
+
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const [cardsRes, uploadsRes, profilesRes] = await Promise.all([
+    const [cardsRes, uploadsRes, profilesRes, modulesRes] = await Promise.all([
       supabase.from('dynamic_flashcards').select('*').order('created_at', { ascending: false }),
       supabase.from('content_uploads').select('*').order('created_at', { ascending: false }),
       supabase.from('profiles').select('user_id', { count: 'exact' }),
+      supabase.from('study_modules').select('*').order('created_at', { ascending: true }),
     ]);
 
     if (cardsRes.data) setFlashcards(cardsRes.data);
     if (uploadsRes.data) setUploads(uploadsRes.data);
+    if (modulesRes.data) setStudyModules(modulesRes.data);
 
     const modules = new Set(cardsRes.data?.map(c => c.module) || []);
     setStats({
       totalCards: cardsRes.data?.length || 0,
-      totalModules: modules.size,
+      totalModules: modulesRes.data?.length || 0,
       totalUsers: profilesRes.count || 0,
     });
     setLoading(false);
@@ -69,24 +83,54 @@ export function AdminPanel() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  const handleAddModule = async () => {
+    if (!newModuleName.trim()) {
+      toast.error('Informe o nome do módulo');
+      return;
+    }
+    const { error } = await supabase.from('study_modules').insert({
+      name: newModuleName.trim(),
+      color: newModuleColor,
+      created_by: user?.id || '',
+    });
+    if (error) {
+      toast.error(error.message.includes('duplicate') ? 'Módulo já existe' : 'Erro ao criar módulo');
+    } else {
+      toast.success(`Módulo "${newModuleName}" criado!`);
+      setNewModuleName('');
+      fetchData();
+    }
+  };
+
+  const handleDeleteStudyModule = async (mod: StudyModule) => {
+    // Delete the module and all associated content
+    await Promise.all([
+      supabase.from('dynamic_flashcards').delete().eq('module', mod.name),
+      supabase.from('dynamic_questions').delete().eq('module', mod.name),
+      supabase.from('word_search_words').delete().eq('module', mod.name),
+      supabase.from('study_modules').delete().eq('id', mod.id),
+    ]);
+    toast.success(`Módulo "${mod.name}" e todo conteúdo excluídos`);
+    fetchData();
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setFileName(file.name);
-
     const reader = new FileReader();
     reader.onload = () => {
-      const text = reader.result as string;
-      setFileText(text);
-      toast.success(`Arquivo "${file.name}" carregado com sucesso`);
+      setFileText(reader.result as string);
+      toast.success(`Arquivo "${file.name}" carregado`);
     };
+    reader.onerror = () => toast.error('Erro ao ler arquivo');
     reader.readAsText(file);
   };
 
   const handleConvert = async () => {
-    if (!moduleName.trim()) {
-      toast.error('Informe o nome do módulo');
+    const selectedModule = studyModules.find(m => m.id === selectedModuleId);
+    if (!selectedModule) {
+      toast.error('Selecione um módulo');
       return;
     }
     if (!fileText.trim()) {
@@ -96,48 +140,33 @@ export function AdminPanel() {
 
     setProcessing(true);
     try {
-      const webhookUrl = 'https://n8n-n8n.xwskpb.easypanel.host/webhook-test/biocore-appz';
-      
-      const response = await fetch(webhookUrl, {
+      const response = await fetch(WEBHOOK_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text: fileText,
-          moduleName: moduleName.trim(),
-          moduleColor,
+          moduleName: selectedModule.name,
+          moduleColor: selectedModule.color,
           fileName,
           userId: user?.id,
         }),
       });
 
       if (!response.ok) {
-        throw new Error(`Erro do webhook: ${response.status}`);
+        const text = await response.text().catch(() => '');
+        throw new Error(`Erro ${response.status}: ${text || 'webhook falhou'}`);
       }
 
-      toast.success(`Arquivo "${fileName}" enviado para processamento do módulo "${moduleName}"!`);
+      toast.success(`Arquivo enviado para processamento no módulo "${selectedModule.name}"!`);
       setFileText('');
       setFileName('');
-      setModuleName('');
+      setSelectedModuleId('');
       fetchData();
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao enviar arquivo');
+      console.error('Webhook error:', err);
+      toast.error(`Erro ao enviar: ${err.message}`);
     } finally {
       setProcessing(false);
-    }
-  };
-
-  const handleDeleteModule = async (module: string) => {
-    const [r1, r2, r3] = await Promise.all([
-      supabase.from('dynamic_flashcards').delete().eq('module', module),
-      supabase.from('dynamic_questions').delete().eq('module', module),
-      supabase.from('word_search_words').delete().eq('module', module),
-    ]);
-
-    if (r1.error || r2.error || r3.error) {
-      toast.error('Erro ao excluir módulo');
-    } else {
-      toast.success(`Módulo "${module}" excluído (cards, questões e palavras)`);
-      fetchData();
     }
   };
 
@@ -148,14 +177,14 @@ export function AdminPanel() {
   }, {} as Record<string, DynamicFlashcard[]>);
 
   const tabs = [
-    { id: 'upload' as const, label: 'Upload Arquivo', icon: Upload },
+    { id: 'modules' as const, label: 'Módulos', icon: Layers },
+    { id: 'upload' as const, label: 'Upload', icon: Upload },
     { id: 'content' as const, label: 'Conteúdos', icon: BookOpen },
     { id: 'stats' as const, label: 'Estatísticas', icon: BarChart3 },
   ];
 
   return (
     <div className="min-h-[calc(100vh-4rem)]">
-      {/* Admin Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
           <div className="p-2 rounded-xl bg-destructive/10">
@@ -163,13 +192,12 @@ export function AdminPanel() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground">Painel Admin</h1>
-            <p className="text-sm text-muted-foreground">Gerencie conteúdos e monitore a plataforma</p>
+            <p className="text-sm text-muted-foreground">Gerencie módulos, conteúdos e monitore a plataforma</p>
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6 p-1 bg-secondary/50 rounded-xl w-fit">
+      <div className="flex gap-2 mb-6 p-1 bg-secondary/50 rounded-xl w-fit flex-wrap">
         {tabs.map(tab => (
           <button
             key={tab.id}
@@ -187,23 +215,81 @@ export function AdminPanel() {
       </div>
 
       <AnimatePresence mode="wait">
+        {/* MODULES TAB */}
+        {activeTab === 'modules' && (
+          <motion.div key="modules" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
+            <div className="bg-card rounded-2xl border border-border p-6 shadow-card">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Plus className="w-5 h-5 text-destructive" />
+                Adicionar Módulo de Estudo
+              </h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">Nome do Módulo</label>
+                  <input
+                    type="text"
+                    value={newModuleName}
+                    onChange={e => setNewModuleName(e.target.value)}
+                    placeholder="Ex: Sistema Nervoso"
+                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-destructive/50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">Cor</label>
+                  <div className="flex gap-3 flex-wrap">
+                    {MODULE_COLORS.map(color => (
+                      <button
+                        key={color.value}
+                        onClick={() => setNewModuleColor(color.value)}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all ${
+                          newModuleColor === color.value ? 'border-destructive bg-destructive/10' : 'border-border hover:border-destructive/30'
+                        }`}
+                      >
+                        <div className={`w-4 h-4 rounded-full ${color.class}`} />
+                        <span className="text-sm">{color.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <button onClick={handleAddModule} className="px-6 py-2.5 rounded-xl bg-destructive text-white font-semibold hover:bg-destructive/90 transition-all flex items-center gap-2">
+                  <Plus className="w-4 h-4" />
+                  Criar Módulo
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-card rounded-2xl border border-border p-6 shadow-card">
+              <h2 className="text-lg font-semibold mb-4">Módulos Cadastrados</h2>
+              {studyModules.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">Nenhum módulo cadastrado</p>
+              ) : (
+                <div className="space-y-3">
+                  {studyModules.map(mod => (
+                    <div key={mod.id} className="flex items-center justify-between p-3 rounded-xl bg-secondary/50">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-4 h-4 rounded-full ${MODULE_COLORS.find(c => c.value === mod.color)?.class || 'bg-primary'}`} />
+                        <span className="font-medium text-foreground">{mod.name}</span>
+                      </div>
+                      <button onClick={() => handleDeleteStudyModule(mod)} className="p-2 rounded-lg text-destructive hover:bg-destructive/10 transition-colors">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {/* UPLOAD TAB */}
         {activeTab === 'upload' && (
-          <motion.div
-            key="upload"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="space-y-6"
-          >
-            {/* Upload Card */}
+          <motion.div key="upload" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
             <div className="bg-card rounded-2xl border border-border p-6 shadow-card">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <FileText className="w-5 h-5 text-destructive" />
                 Enviar Arquivo de Texto
               </h2>
-
               <div className="space-y-4">
-                {/* File Upload */}
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">Arquivo (TXT, DOC, DOCX, RTF, MD, CSV...)</label>
                   <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-destructive/50 hover:bg-destructive/5 transition-colors">
@@ -225,40 +311,23 @@ export function AdminPanel() {
                   </label>
                 </div>
 
-                {/* Module Name */}
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Nome do Módulo</label>
-                  <input
-                    type="text"
-                    value={moduleName}
-                    onChange={e => setModuleName(e.target.value)}
-                    placeholder="Ex: Sistema Nervoso"
-                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-destructive/50"
-                  />
-                </div>
-
-                {/* Module Color */}
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Cor do Módulo</label>
-                  <div className="flex gap-3">
-                    {MODULE_COLORS.map(color => (
-                      <button
-                        key={color.value}
-                        onClick={() => setModuleColor(color.value)}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all ${
-                          moduleColor === color.value
-                            ? 'border-destructive bg-destructive/10'
-                            : 'border-border hover:border-destructive/30'
-                        }`}
-                      >
-                        <div className={`w-4 h-4 rounded-full ${color.class}`} />
-                        <span className="text-sm">{color.label}</span>
-                      </button>
+                  <label className="block text-sm font-medium text-foreground mb-2">Módulo</label>
+                  <select
+                    value={selectedModuleId}
+                    onChange={e => setSelectedModuleId(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-destructive/50"
+                  >
+                    <option value="">Selecione um módulo</option>
+                    {studyModules.map(mod => (
+                      <option key={mod.id} value={mod.id}>{mod.name}</option>
                     ))}
-                  </div>
+                  </select>
+                  {studyModules.length === 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">Crie módulos na aba "Módulos" primeiro</p>
+                  )}
                 </div>
 
-                {/* Preview */}
                 {fileText && (
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">Prévia do conteúdo</label>
@@ -268,10 +337,9 @@ export function AdminPanel() {
                   </div>
                 )}
 
-                {/* Send Button */}
                 <button
                   onClick={handleConvert}
-                  disabled={processing || !fileText || !moduleName}
+                  disabled={processing || !fileText || !selectedModuleId}
                   className="w-full py-3 rounded-xl bg-destructive text-white font-semibold hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
                 >
                   {processing ? (
@@ -289,7 +357,6 @@ export function AdminPanel() {
               </div>
             </div>
 
-            {/* Recent Uploads */}
             <div className="bg-card rounded-2xl border border-border p-6 shadow-card">
               <h2 className="text-lg font-semibold mb-4">Uploads Recentes</h2>
               {uploads.length === 0 ? (
@@ -321,18 +388,11 @@ export function AdminPanel() {
         )}
 
         {activeTab === 'content' && (
-          <motion.div
-            key="content"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="space-y-4"
-          >
+          <motion.div key="content" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-4">
             {Object.keys(groupedByModule).length === 0 ? (
               <div className="bg-card rounded-2xl border border-border p-12 text-center">
                 <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground">Nenhum conteúdo dinâmico criado</p>
-                <p className="text-sm text-muted-foreground mt-1">Use a aba Upload para adicionar conteúdos</p>
               </div>
             ) : (
               Object.entries(groupedByModule).map(([module, cards]) => (
@@ -341,16 +401,8 @@ export function AdminPanel() {
                     <div className="flex items-center gap-3">
                       <div className={`w-3 h-3 rounded-full bg-${cards[0]?.module_color || 'primary'}`} />
                       <h3 className="font-semibold">{module}</h3>
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
-                        {cards.length} cards
-                      </span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">{cards.length} cards</span>
                     </div>
-                    <button
-                      onClick={() => handleDeleteModule(module)}
-                      className="p-2 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
                   </div>
                   <div className="space-y-2 max-h-60 overflow-y-auto">
                     {cards.slice(0, 5).map(card => (
@@ -360,9 +412,7 @@ export function AdminPanel() {
                       </div>
                     ))}
                     {cards.length > 5 && (
-                      <p className="text-xs text-muted-foreground text-center py-2">
-                        + {cards.length - 5} cards ocultos
-                      </p>
+                      <p className="text-xs text-muted-foreground text-center py-2">+ {cards.length - 5} cards ocultos</p>
                     )}
                   </div>
                 </div>
@@ -372,20 +422,14 @@ export function AdminPanel() {
         )}
 
         {activeTab === 'stats' && (
-          <motion.div
-            key="stats"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-4"
-          >
+          <motion.div key="stats" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-card rounded-2xl border border-border p-6 shadow-card text-center">
               <BookOpen className="w-8 h-8 text-destructive mx-auto mb-3" />
               <p className="text-3xl font-bold text-foreground">{stats.totalCards}</p>
               <p className="text-sm text-muted-foreground">Flashcards Dinâmicos</p>
             </div>
             <div className="bg-card rounded-2xl border border-border p-6 shadow-card text-center">
-              <FileText className="w-8 h-8 text-primary mx-auto mb-3" />
+              <Layers className="w-8 h-8 text-primary mx-auto mb-3" />
               <p className="text-3xl font-bold text-foreground">{stats.totalModules}</p>
               <p className="text-sm text-muted-foreground">Módulos Criados</p>
             </div>
