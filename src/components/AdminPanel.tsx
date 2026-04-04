@@ -39,11 +39,19 @@ const MODULE_COLORS = [
 ];
 
 const ACCEPTED_FILE_TYPES = '.txt,.doc,.docx,.rtf,.odt,.md,.csv,.text';
-const WEBHOOK_URL = 'https://n8n-n8n.xwskpb.easypanel.host/webhook/biocore-appz';
+const DEFAULT_WEBHOOK_URL = 'https://n8n-n8n.xwskpb.easypanel.host/webhook/biocore-appz';
+
+function getWebhookUrl(): string {
+  return localStorage.getItem('admin_webhook_url') || DEFAULT_WEBHOOK_URL;
+}
+
+function setWebhookUrlStorage(url: string) {
+  localStorage.setItem('admin_webhook_url', url);
+}
 
 export function AdminPanel() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'modules' | 'upload' | 'content' | 'stats'>('modules');
+  const [activeTab, setActiveTab] = useState<'modules' | 'upload' | 'content' | 'stats' | 'webhook'>('modules');
   const [flashcards, setFlashcards] = useState<DynamicFlashcard[]>([]);
   const [uploads, setUploads] = useState<ContentUpload[]>([]);
   const [studyModules, setStudyModules] = useState<StudyModule[]>([]);
@@ -58,6 +66,8 @@ export function AdminPanel() {
   const [newModuleColor, setNewModuleColor] = useState('primary');
   // Upload module selection
   const [selectedModuleId, setSelectedModuleId] = useState('');
+  // Webhook config
+  const [webhookUrl, setWebhookUrl] = useState(getWebhookUrl());
 
   const fetchData = useCallback(async () => {
     setLoading(true);
