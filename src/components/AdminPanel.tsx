@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, FileText, Trash2, Plus, CheckCircle, Loader2, BookOpen, BarChart3, Users, Settings, Layers } from 'lucide-react';
+import { Upload, FileText, Trash2, Plus, CheckCircle, Loader2, BookOpen, BarChart3, Users, Settings, Layers, Link } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -39,11 +39,19 @@ const MODULE_COLORS = [
 ];
 
 const ACCEPTED_FILE_TYPES = '.txt,.doc,.docx,.rtf,.odt,.md,.csv,.text';
-const WEBHOOK_URL = 'https://n8n-n8n.xwskpb.easypanel.host/webhook/biocore-appz';
+const DEFAULT_WEBHOOK_URL = 'https://n8n-n8n.xwskpb.easypanel.host/webhook/biocore-appz';
+
+function getWebhookUrl(): string {
+  return localStorage.getItem('admin_webhook_url') || DEFAULT_WEBHOOK_URL;
+}
+
+function setWebhookUrlStorage(url: string) {
+  localStorage.setItem('admin_webhook_url', url);
+}
 
 export function AdminPanel() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'modules' | 'upload' | 'content' | 'stats'>('modules');
+  const [activeTab, setActiveTab] = useState<'modules' | 'upload' | 'content' | 'stats' | 'webhook'>('modules');
   const [flashcards, setFlashcards] = useState<DynamicFlashcard[]>([]);
   const [uploads, setUploads] = useState<ContentUpload[]>([]);
   const [studyModules, setStudyModules] = useState<StudyModule[]>([]);
@@ -58,6 +66,8 @@ export function AdminPanel() {
   const [newModuleColor, setNewModuleColor] = useState('primary');
   // Upload module selection
   const [selectedModuleId, setSelectedModuleId] = useState('');
+  // Webhook config
+  const [webhookUrl, setWebhookUrl] = useState(getWebhookUrl());
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -140,7 +150,7 @@ export function AdminPanel() {
 
     setProcessing(true);
     try {
-      const response = await fetch(WEBHOOK_URL, {
+      const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -181,6 +191,7 @@ export function AdminPanel() {
     { id: 'upload' as const, label: 'Upload', icon: Upload },
     { id: 'content' as const, label: 'Conteúdos', icon: BookOpen },
     { id: 'stats' as const, label: 'Estatísticas', icon: BarChart3 },
+    { id: 'webhook' as const, label: 'Webhook', icon: Link },
   ];
 
   return (
@@ -437,6 +448,49 @@ export function AdminPanel() {
               <Users className="w-8 h-8 text-accent mx-auto mb-3" />
               <p className="text-3xl font-bold text-foreground">{stats.totalUsers}</p>
               <p className="text-sm text-muted-foreground">Usuários Registrados</p>
+            </div>
+          </motion.div>
+        )}
+
+        {activeTab === 'webhook' && (
+          <motion.div key="webhook" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+            <div className="bg-card rounded-2xl border border-border p-6 shadow-card max-w-xl">
+              <h2 className="text-lg font-bold text-foreground mb-1">Configuração do Webhook</h2>
+              <p className="text-sm text-muted-foreground mb-4">URL do webhook do n8n para processamento de conteúdo com IA.</p>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">URL do Webhook</label>
+                  <input
+                    type="url"
+                    value={webhookUrl}
+                    onChange={(e) => setWebhookUrl(e.target.value)}
+                    placeholder="https://..."
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setWebhookUrlStorage(webhookUrl);
+                      toast.success('Webhook salvo com sucesso!');
+                    }}
+                    className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+                  >
+                    Salvar
+                  </button>
+                  <button
+                    onClick={() => {
+                      setWebhookUrl(DEFAULT_WEBHOOK_URL);
+                      setWebhookUrlStorage(DEFAULT_WEBHOOK_URL);
+                      toast.success('Webhook restaurado ao padrão.');
+                    }}
+                    className="px-4 py-2 rounded-lg bg-secondary text-secondary-foreground text-sm font-medium hover:bg-secondary/80 transition-colors"
+                  >
+                    Restaurar Padrão
+                  </button>
+                </div>
+                <p className="text-xs text-muted-foreground">Padrão: {DEFAULT_WEBHOOK_URL}</p>
+              </div>
             </div>
           </motion.div>
         )}
