@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, FileText, Trash2, Plus, CheckCircle, Loader2, BookOpen, BarChart3, Users, Settings, Layers } from 'lucide-react';
+import { Upload, FileText, Trash2, Plus, CheckCircle, Loader2, BookOpen, BarChart3, Users, Settings, Layers, Link } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
