@@ -191,6 +191,7 @@ export function AdminPanel() {
     { id: 'upload' as const, label: 'Upload', icon: Upload },
     { id: 'content' as const, label: 'Conteúdos', icon: BookOpen },
     { id: 'stats' as const, label: 'Estatísticas', icon: BarChart3 },
+    { id: 'webhook' as const, label: 'Webhook', icon: Link },
   ];
 
   return (
