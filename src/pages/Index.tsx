@@ -12,6 +12,7 @@ import { QuizView } from '@/components/QuizView';
 import { Leaderboard } from '@/components/Leaderboard';
 import { ExamSimulator } from '@/components/ExamSimulator';
 import { WordSearchGame } from '@/components/WordSearchGame';
+import { ModuleDifficultySelector } from '@/components/ModuleDifficultySelector';
 import { useDynamicFlashcards } from '@/hooks/useDynamicFlashcards';
 
 type View = 'dashboard' | 'flashcards' | 'quiz' | 'leaderboard' | 'exam' | 'profile' | 'admin' | 'wordsearch';
@@ -32,6 +33,8 @@ const Index = () => {
   const { allCards } = useDynamicFlashcards();
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [moduleFilter, setModuleFilter] = useState<string | undefined>();
+  const [difficultyFilter, setDifficultyFilter] = useState<string>('all');
+  const [showSelector, setShowSelector] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -47,9 +50,11 @@ const Index = () => {
   }, [darkMode]);
 
   const filteredCards = useMemo(() => {
-    if (!moduleFilter) return allCards;
-    return allCards.filter(c => c.module === moduleFilter);
-  }, [moduleFilter, allCards]);
+    let cards = allCards;
+    if (moduleFilter) cards = cards.filter(c => c.module === moduleFilter);
+    if (difficultyFilter !== 'all') cards = cards.filter(c => c.difficulty === difficultyFilter);
+    return cards;
+  }, [moduleFilter, difficultyFilter, allCards]);
 
   if (loading) {
     return (
@@ -62,9 +67,31 @@ const Index = () => {
   if (!user) return <Auth />;
 
   const handleNavigate = (view: string, module?: string) => {
-    setCurrentView(view as View);
-    setModuleFilter(module);
+    const v = view as View;
+    setCurrentView(v);
     setMobileMenuOpen(false);
+
+    if (module) {
+      // Direct navigation from dashboard with module pre-selected
+      setModuleFilter(module);
+      setDifficultyFilter('all');
+      setShowSelector(false);
+    } else if (['flashcards', 'quiz', 'exam', 'wordsearch'].includes(v)) {
+      // Navigation from menu - show selector
+      setModuleFilter(undefined);
+      setDifficultyFilter('all');
+      setShowSelector(true);
+    } else {
+      setModuleFilter(undefined);
+      setShowSelector(false);
+    }
+  };
+
+  const handleSelectorConfirm = (modules: string[], difficulty: string) => {
+    // If no modules selected, show all (no filter)
+    setModuleFilter(modules.length === 1 ? modules[0] : undefined);
+    setDifficultyFilter(difficulty);
+    setShowSelector(false);
   };
 
   const stats = {
@@ -74,7 +101,20 @@ const Index = () => {
     totalPoints: profile?.total_points ?? 0,
   };
 
+  const selectorTitles: Record<string, { title: string; icon: React.ReactNode }> = {
+    flashcards: { title: 'Flashcards', icon: <BookOpen className="w-6 h-6 text-primary" /> },
+    quiz: { title: 'Quiz', icon: <Brain className="w-6 h-6 text-accent" /> },
+    exam: { title: 'Prova', icon: <GraduationCap className="w-6 h-6 text-destructive" /> },
+    wordsearch: { title: 'Caça-Palavras', icon: <Search className="w-6 h-6 text-primary" /> },
+  };
+
   const renderView = () => {
+    // Show selector if needed
+    if (showSelector && selectorTitles[currentView]) {
+      const s = selectorTitles[currentView];
+      return <ModuleDifficultySelector title={s.title} icon={s.icon} onSelect={handleSelectorConfirm} />;
+    }
+
     switch (currentView) {
       case 'dashboard':
         return <Dashboard onNavigate={handleNavigate} stats={stats} />;
@@ -102,7 +142,7 @@ const Index = () => {
           <div className="flex items-center gap-3">
             {currentView !== 'dashboard' && (
               <button
-                onClick={() => { setCurrentView('dashboard'); setModuleFilter(undefined); }}
+                onClick={() => { setCurrentView('dashboard'); setModuleFilter(undefined); setShowSelector(false); }}
                 className="p-1.5 rounded-lg hover:bg-secondary transition-colors"
               >
                 <ArrowLeft className="w-5 h-5 text-muted-foreground" />
@@ -193,15 +233,16 @@ const Index = () => {
         </AnimatePresence>
       </header>
 
-      {moduleFilter && currentView === 'flashcards' && (
+      {moduleFilter && !showSelector && ['flashcards', 'quiz', 'exam', 'wordsearch'].includes(currentView) && (
         <div className="max-w-5xl mx-auto px-4 pt-4">
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground">Módulo:</span>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
-              {moduleFilter}
-            </span>
-            <button onClick={() => setModuleFilter(undefined)} className="text-xs text-muted-foreground hover:text-foreground">
-              × Limpar
+            <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">{moduleFilter}</span>
+            {difficultyFilter !== 'all' && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-warning/10 text-warning font-medium">{difficultyFilter}</span>
+            )}
+            <button onClick={() => setShowSelector(true)} className="text-xs text-muted-foreground hover:text-foreground">
+              ✎ Alterar
             </button>
           </div>
         </div>
@@ -210,7 +251,7 @@ const Index = () => {
       <main className="max-w-5xl mx-auto px-4 py-8">
         <AnimatePresence mode="wait">
           <motion.div
-            key={currentView + (moduleFilter || '')}
+            key={currentView + (moduleFilter || '') + (showSelector ? 'sel' : '')}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
