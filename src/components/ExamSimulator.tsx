@@ -1,9 +1,10 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getQuizQuestions } from '@/data/flashcards';
-import { CheckCircle2, XCircle, Trophy, ArrowRight, Clock, Flame, AlertTriangle, Zap } from 'lucide-react';
+import { CheckCircle2, XCircle, Trophy, ArrowRight, Clock, Flame, AlertTriangle, Zap, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useDynamicQuestions } from '@/hooks/useDynamicQuestions';
+import { useWebhookGenerate } from '@/hooks/useWebhookGenerate';
 
 interface ExamSimulatorProps {
   moduleFilter?: string;
