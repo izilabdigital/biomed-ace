@@ -67,7 +67,7 @@ export function ExamSimulator({ moduleFilter, userId, onProgressUpdate }: ExamSi
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [isStarted, isFinished]);
 
-  const startExam = (diff: Difficulty) => {
+  const startExam = async (diff: Difficulty) => {
     const config = difficultyConfig[diff];
 
     // Map dynamic exam questions into the same shape
@@ -98,6 +98,29 @@ export function ExamSimulator({ moduleFilter, userId, onProgressUpdate }: ExamSi
         const remaining = mapStatic(getQuizQuestions(config.questions * 3, moduleFilter))
           .filter(q => !filteredQuestions.find(f => f.id === q.id));
         filteredQuestions = [...filteredQuestions, ...remaining.slice(0, config.questions - filteredQuestions.length)];
+      }
+    }
+
+    // If still not enough questions, try webhook
+    if (filteredQuestions.length < config.questions && moduleFilter) {
+      const result = await generate({
+        contentType: 'exam',
+        moduleName: moduleFilter,
+        difficulty: diff === 'all' ? undefined : diff,
+        count: config.questions,
+      });
+
+      if (result?.questions && Array.isArray(result.questions)) {
+        const webhookQuestions = result.questions.map((q: any, i: number) => ({
+          id: `webhook-exam-${i}`,
+          question: q.question || q.question_text,
+          options: q.options || [],
+          correctIndex: q.correctIndex ?? q.correct_index ?? 0,
+          module: moduleFilter,
+          difficulty: q.difficulty || diff,
+          explanation: q.explanation || null,
+        }));
+        filteredQuestions = [...filteredQuestions, ...webhookQuestions].slice(0, config.questions);
       }
     }
 
