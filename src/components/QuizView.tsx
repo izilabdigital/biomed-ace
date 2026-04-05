@@ -1,9 +1,10 @@
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getQuizQuestions } from '@/data/flashcards';
-import { CheckCircle2, XCircle, Trophy, ArrowRight } from 'lucide-react';
+import { CheckCircle2, XCircle, Trophy, ArrowRight, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useDynamicQuestions } from '@/hooks/useDynamicQuestions';
+import { useWebhookGenerate } from '@/hooks/useWebhookGenerate';
 
 interface QuizViewProps {
   moduleFilter?: string;
@@ -24,6 +25,7 @@ interface QuizQuestion {
 
 export function QuizView({ moduleFilter, questionCount = 10, userId, onProgressUpdate }: QuizViewProps) {
   const { questions: dynamicQuestions, loading: dynamicLoading } = useDynamicQuestions('quiz', moduleFilter);
+  const { generate, generating } = useWebhookGenerate();
 
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -31,11 +33,11 @@ export function QuizView({ moduleFilter, questionCount = 10, userId, onProgressU
   const [score, setScore] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
+  const [webhookAttempted, setWebhookAttempted] = useState(false);
 
   useEffect(() => {
     if (dynamicLoading) return;
 
-    // Merge dynamic questions with static ones
     const dynamicMapped: QuizQuestion[] = dynamicQuestions.map(q => ({
       id: q.id,
       question: q.question_text,
@@ -46,6 +48,13 @@ export function QuizView({ moduleFilter, questionCount = 10, userId, onProgressU
       explanation: q.explanation,
     }));
 
+    if (dynamicMapped.length >= questionCount) {
+      // Enough dynamic questions, use them
+      setQuestions(dynamicMapped.sort(() => Math.random() - 0.5).slice(0, questionCount));
+      return;
+    }
+
+    // If we have some dynamic questions, fill with static
     const staticQuestions: QuizQuestion[] = getQuizQuestions(questionCount, moduleFilter).map(q => ({
       id: q.id,
       question: q.question,
@@ -55,16 +64,53 @@ export function QuizView({ moduleFilter, questionCount = 10, userId, onProgressU
       difficulty: q.difficulty,
     }));
 
-    // Prioritize dynamic questions, fill remainder with static
     const combined = [...dynamicMapped];
     const remaining = questionCount - combined.length;
     if (remaining > 0) {
       combined.push(...staticQuestions.slice(0, remaining));
     }
 
-    // Shuffle
+    // If still not enough and we have a module filter, try webhook
+    if (combined.length < questionCount && moduleFilter && !webhookAttempted) {
+      setWebhookAttempted(true);
+      generateViaWebhook(moduleFilter);
+      return;
+    }
+
     setQuestions(combined.sort(() => Math.random() - 0.5).slice(0, questionCount));
-  }, [dynamicLoading, dynamicQuestions, questionCount, moduleFilter]);
+  }, [dynamicLoading, dynamicQuestions, questionCount, moduleFilter, webhookAttempted]);
+
+  const generateViaWebhook = async (mod: string) => {
+    const result = await generate({
+      contentType: 'quiz',
+      moduleName: mod,
+      count: questionCount,
+    });
+
+    if (result?.questions && Array.isArray(result.questions)) {
+      const webhookQuestions: QuizQuestion[] = result.questions.map((q: any, i: number) => ({
+        id: `webhook-${i}`,
+        question: q.question || q.question_text,
+        options: q.options || [],
+        correctIndex: q.correctIndex ?? q.correct_index ?? 0,
+        module: mod,
+        difficulty: q.difficulty || 'medium',
+        explanation: q.explanation || null,
+      }));
+      setQuestions(webhookQuestions.slice(0, questionCount));
+    } else {
+      // Fallback to whatever we have
+      const staticQuestions: QuizQuestion[] = getQuizQuestions(questionCount, moduleFilter).map(q => ({
+        id: q.id,
+        question: q.question,
+        options: q.options,
+        correctIndex: q.correctIndex,
+        module: q.module,
+        difficulty: q.difficulty,
+      }));
+      setQuestions(staticQuestions.sort(() => Math.random() - 0.5).slice(0, questionCount));
+    }
+  };
 
   const question = questions[currentIndex];
 
@@ -115,10 +161,18 @@ export function QuizView({ moduleFilter, questionCount = 10, userId, onProgressU
     }
   };
 
-  if (dynamicLoading || questions.length === 0) {
+  if (dynamicLoading || generating || questions.length === 0) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-pulse text-muted-foreground">Carregando quiz...</div>
+      <div className="flex flex-col items-center justify-center py-12 gap-4">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <div className="text-muted-foreground">
+          {generating ? 'Gerando questões com IA...' : 'Carregando quiz...'}
+        </div>
+        {generating && (
+          <p className="text-xs text-muted-foreground max-w-xs text-center">
+            A IA está analisando o módulo e criando questões personalizadas. Isso pode levar alguns segundos.
+          </p>
+        )}
       </div>
     );
   }
@@ -137,7 +191,7 @@ export function QuizView({ moduleFilter, questionCount = 10, userId, onProgressU
           <p className="text-sm text-accent mt-1">+{score * 15} pontos</p>
         </div>
         <button
-          onClick={() => { setCurrentIndex(0); setSelectedIndex(null); setFeedback(null); setScore(0); setIsFinished(false); }}
+          onClick={() => { setCurrentIndex(0); setSelectedIndex(null); setFeedback(null); setScore(0); setIsFinished(false); setWebhookAttempted(false); }}
           className="px-6 py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:shadow-card-hover transition-all"
         >
           Tentar Novamente
