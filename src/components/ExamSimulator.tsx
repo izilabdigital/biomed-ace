@@ -38,6 +38,7 @@ function formatTime(seconds: number) {
 
 export function ExamSimulator({ moduleFilter, userId, onProgressUpdate }: ExamSimulatorProps) {
   const { questions: dynamicExamQuestions } = useDynamicQuestions('exam', moduleFilter);
+  const { generate, generating } = useWebhookGenerate();
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
   const [questions, setQuestions] = useState<{ id: any; question: string; options: string[]; correctIndex: number; module: string; difficulty: string; explanation?: string | null }[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
