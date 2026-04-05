@@ -11,15 +11,15 @@ serve(async (req) => {
   }
 
   try {
-    const { contentType, moduleName, moduleColor, difficulty, count } = await req.json();
+    const { contentType, moduleName, moduleColor, difficulty, count, webhookUrl: clientWebhookUrl } = await req.json();
 
     // contentType: 'flashcards' | 'quiz' | 'exam' | 'wordsearch'
     if (!contentType || !moduleName) {
       return jsonResp({ error: 'contentType e moduleName são obrigatórios' }, 400);
     }
 
-    // Get webhook URL from request or use default
-    const webhookUrl = Deno.env.get('N8N_WEBHOOK_URL') || 'https://n8n-n8n.xwskpb.easypanel.host/webhook/biocore-appz';
+    // Priority: client-provided URL > env var > default
+    const webhookUrl = clientWebhookUrl || Deno.env.get('N8N_WEBHOOK_URL') || 'https://n8n-n8n.xwskpb.easypanel.host/webhook/biocore-appz';
 
     console.log(`Generating ${contentType} for module "${moduleName}", difficulty: ${difficulty || 'all'}, count: ${count || 10}`);
 
