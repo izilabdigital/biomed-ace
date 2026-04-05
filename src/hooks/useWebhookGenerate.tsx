@@ -16,8 +16,11 @@ export function useWebhookGenerate() {
   const generate = useCallback(async (options: GenerateOptions) => {
     setGenerating(true);
     try {
+      // Pass webhook URL from admin config
+      const webhookUrl = localStorage.getItem('admin_webhook_url') || undefined;
+      
       const { data, error } = await supabase.functions.invoke('generate-content', {
-        body: options,
+        body: { ...options, webhookUrl },
       });
 
       if (error) throw error;
