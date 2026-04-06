@@ -150,7 +150,7 @@ export function FlashcardView({ cards, userId, moduleFilter, onProgressUpdate }:
     <div className="flex flex-col items-center gap-6 w-full max-w-2xl mx-auto">
       <div className="flex items-center gap-3 w-full">
         <span className="text-sm text-muted-foreground font-mono-data">
-          {currentIndex + 1}/{cards.length}
+          {currentIndex + 1}/{allCards.length}
         </span>
         <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
           <motion.div
