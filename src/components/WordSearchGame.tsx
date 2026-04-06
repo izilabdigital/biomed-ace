@@ -226,10 +226,13 @@ export function WordSearchGame({ moduleFilter }: WordSearchGameProps) {
     return null;
   }, [highlightedCells]);
 
-  if (loading) {
+  if (loading || webhookLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-pulse text-muted-foreground">Carregando caça-palavras...</div>
+      <div className="flex flex-col items-center justify-center gap-4 py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <p className="text-muted-foreground text-sm">
+          {webhookLoading ? 'Gerando palavras com IA...' : 'Carregando caça-palavras...'}
+        </p>
       </div>
     );
   }
