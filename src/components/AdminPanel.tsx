@@ -689,6 +689,65 @@ export function AdminPanel() {
                 </div>
               </div>
             </div>
+
+            <div className="bg-card rounded-2xl border border-border p-6 shadow-card max-w-xl mt-6">
+              <h2 className="text-lg font-bold text-foreground mb-1 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-destructive" />
+                Gerar Conteúdo sob Demanda
+              </h2>
+              <p className="text-sm text-muted-foreground mb-4">Gere flashcards, questões de quiz/prova ou palavras para caça-palavras via IA para o módulo selecionado.</p>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">Módulo</label>
+                  <select
+                    value={genModuleId}
+                    onChange={e => setGenModuleId(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-destructive/50"
+                  >
+                    <option value="">Selecione um módulo</option>
+                    {studyModules.map(mod => (
+                      <option key={mod.id} value={mod.id}>{mod.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">Quantidade</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={50}
+                    value={genCount}
+                    onChange={e => setGenCount(Number(e.target.value))}
+                    className="w-32 px-4 py-2.5 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-destructive/50"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  {([
+                    { type: 'flashcards' as const, label: 'Flashcards', icon: Brain },
+                    { type: 'quiz' as const, label: 'Quiz', icon: HelpCircle },
+                    { type: 'exam' as const, label: 'Prova', icon: GraduationCap },
+                    { type: 'wordsearch' as const, label: 'Caça-Palavras', icon: Search },
+                  ]).map(item => (
+                    <button
+                      key={item.type}
+                      disabled={generatingType !== null || !genModuleId}
+                      onClick={() => handleManualGenerate(item.type)}
+                      className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-border bg-secondary/50 text-foreground font-medium text-sm hover:bg-destructive hover:text-white hover:border-destructive transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {generatingType === item.type ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <item.icon className="w-4 h-4" />
+                      )}
+                      {generatingType === item.type ? 'Gerando...' : `Gerar ${item.label}`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
