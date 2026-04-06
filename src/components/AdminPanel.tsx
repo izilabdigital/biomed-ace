@@ -185,7 +185,84 @@ export function AdminPanel() {
     }
   };
 
-  const groupedByModule = flashcards.reduce((acc, fc) => {
+  const handleManualGenerate = async (contentType: 'flashcards' | 'quiz' | 'exam' | 'wordsearch') => {
+    const selectedModule = studyModules.find(m => m.id === genModuleId);
+    if (!selectedModule) {
+      toast.error('Selecione um módulo');
+      return;
+    }
+    setGeneratingType(contentType);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-content', {
+        body: {
+          contentType,
+          moduleName: selectedModule.name,
+          moduleColor: selectedModule.color,
+          count: genCount,
+          webhookUrl: getWebhookUrl(),
+        },
+      });
+      if (error) throw error;
+
+      const result = data?.data || data;
+      let savedCount = 0;
+
+      if (contentType === 'flashcards' && result?.flashcards) {
+        for (const fc of result.flashcards) {
+          await supabase.from('dynamic_flashcards').insert({
+            module: selectedModule.name,
+            module_color: selectedModule.color,
+            front: fc.front,
+            back: fc.back,
+            difficulty: fc.difficulty || 'medium',
+            created_by: user?.id || '',
+          });
+          savedCount++;
+        }
+      } else if ((contentType === 'quiz' || contentType === 'exam') && result?.questions) {
+        for (const q of result.questions) {
+          await supabase.from('dynamic_questions').insert({
+            module: selectedModule.name,
+            module_color: selectedModule.color,
+            question_text: q.question,
+            options: q.options,
+            correct_index: q.correctIndex,
+            explanation: q.explanation || '',
+            difficulty: q.difficulty || 'medium',
+            question_type: contentType,
+            created_by: user?.id || '',
+          });
+          savedCount++;
+        }
+      } else if (contentType === 'wordsearch' && result?.words) {
+        for (const w of result.words) {
+          await supabase.from('word_search_words').insert({
+            module: selectedModule.name,
+            module_color: selectedModule.color,
+            word: w.word.toUpperCase(),
+            explanation: w.explanation,
+            created_by: user?.id || '',
+          });
+          savedCount++;
+        }
+      }
+
+      if (savedCount > 0) {
+        toast.success(`${savedCount} itens de "${contentType}" gerados e salvos para "${selectedModule.name}"!`);
+        fetchData();
+      } else {
+        toast.warning('Webhook respondeu mas nenhum item foi salvo. Verifique o formato JSON.');
+        console.log('Webhook response:', result);
+      }
+    } catch (err: any) {
+      console.error('Generate error:', err);
+      toast.error('Erro ao gerar: ' + (err.message || 'Falha na requisição'));
+    } finally {
+      setGeneratingType(null);
+    }
+  };
+
+
     if (!acc[fc.module]) acc[fc.module] = [];
     acc[fc.module].push(fc);
     return acc;
