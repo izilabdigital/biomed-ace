@@ -72,7 +72,7 @@ export function FlashcardView({ cards, userId, moduleFilter, onProgressUpdate }:
   if (!card) return null;
 
   const next = () => {
-    if (currentIndex < cards.length - 1) {
+    if (currentIndex < allCards.length - 1) {
       setDirection(1);
       setIsFlipped(false);
       setCurrentIndex(i => i + 1);
