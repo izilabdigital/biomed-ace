@@ -262,7 +262,7 @@ export function AdminPanel() {
     }
   };
 
-
+  const groupedByModule = flashcards.reduce((acc, fc) => {
     if (!acc[fc.module]) acc[fc.module] = [];
     acc[fc.module].push(fc);
     return acc;
