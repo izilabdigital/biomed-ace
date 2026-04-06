@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Trophy, Sparkles, Info } from 'lucide-react';
+import { Search, Trophy, Sparkles, Info, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useWebhookGenerate } from '@/hooks/useWebhookGenerate';
 
 interface WordSearchWord {
   id: string;
@@ -87,20 +88,62 @@ interface WordSearchGameProps {
 export function WordSearchGame({ moduleFilter }: WordSearchGameProps) {
   const [allWords, setAllWords] = useState<WordSearchWord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [webhookLoading, setWebhookLoading] = useState(false);
   const [foundWords, setFoundWords] = useState<Set<string>>(new Set());
   const [selecting, setSelecting] = useState(false);
   const [selectedCells, setSelectedCells] = useState<number[][]>([]);
   const [highlightedCells, setHighlightedCells] = useState<Map<string, number[][]>>(new Map());
   const [showExplanation, setShowExplanation] = useState<string | null>(null);
   const [startCell, setStartCell] = useState<number[] | null>(null);
+  const { generate } = useWebhookGenerate();
+
+  const MIN_WORDS = 6;
 
   useEffect(() => {
     const fetchWords = async () => {
+      setLoading(true);
       let query = supabase.from('word_search_words').select('*');
       if (moduleFilter) query = query.eq('module', moduleFilter);
       const { data } = await query;
-      if (data) setAllWords(data as WordSearchWord[]);
-      setLoading(false);
+      const dbWords = (data as WordSearchWord[]) || [];
+
+      if (dbWords.length >= MIN_WORDS || !moduleFilter) {
+        setAllWords(dbWords);
+        setLoading(false);
+        return;
+      }
+
+      // Webhook fallback
+      setWebhookLoading(true);
+      try {
+        const result = await generate({
+          contentType: 'wordsearch',
+          moduleName: moduleFilter,
+          count: MIN_WORDS - dbWords.length,
+        });
+        if (result) {
+          const items = result.words || result;
+          if (Array.isArray(items)) {
+            const generated: WordSearchWord[] = items.map((item: any, i: number) => ({
+              id: `gen-${i}`,
+              word: (item.word || '').toUpperCase().replace(/\s/g, ''),
+              explanation: item.explanation || item.description || '',
+              module: moduleFilter,
+            }));
+            setAllWords([...dbWords, ...generated]);
+          } else {
+            setAllWords(dbWords);
+          }
+        } else {
+          setAllWords(dbWords);
+        }
+      } catch (err) {
+        console.error('Webhook wordsearch generation failed:', err);
+        setAllWords(dbWords);
+      } finally {
+        setWebhookLoading(false);
+        setLoading(false);
+      }
     };
     fetchWords();
   }, [moduleFilter]);
@@ -183,10 +226,13 @@ export function WordSearchGame({ moduleFilter }: WordSearchGameProps) {
     return null;
   }, [highlightedCells]);
 
-  if (loading) {
+  if (loading || webhookLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-pulse text-muted-foreground">Carregando caça-palavras...</div>
+      <div className="flex flex-col items-center justify-center gap-4 py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <p className="text-muted-foreground text-sm">
+          {webhookLoading ? 'Gerando palavras com IA...' : 'Carregando caça-palavras...'}
+        </p>
       </div>
     );
   }
