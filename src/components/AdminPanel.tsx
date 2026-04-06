@@ -523,6 +523,91 @@ export function AdminPanel() {
                 <p className="text-xs text-muted-foreground">Padrão: {DEFAULT_WEBHOOK_URL}</p>
               </div>
             </div>
+
+            <div className="bg-card rounded-2xl border border-border p-6 shadow-card max-w-xl mt-6">
+              <h2 className="text-lg font-bold text-foreground mb-1">Formatos JSON Esperados do n8n</h2>
+              <p className="text-sm text-muted-foreground mb-4">Configure seu workflow do n8n para retornar os seguintes formatos de acordo com o campo <code className="bg-muted px-1 rounded text-xs">contentType</code> recebido.</p>
+              
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground mb-1">📇 Flashcards <code className="bg-muted px-1 rounded text-xs">contentType: "flashcards"</code></h3>
+                  <pre className="bg-muted rounded-lg p-3 text-xs text-foreground overflow-x-auto whitespace-pre-wrap">
+{`{
+  "flashcards": [
+    {
+      "front": "Pergunta do flashcard",
+      "back": "Resposta do flashcard",
+      "difficulty": "easy | medium | hard",
+      "moduleColor": "primary"
+    }
+  ]
+}`}
+                  </pre>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground mb-1">❓ Quiz <code className="bg-muted px-1 rounded text-xs">contentType: "quiz"</code></h3>
+                  <pre className="bg-muted rounded-lg p-3 text-xs text-foreground overflow-x-auto whitespace-pre-wrap">
+{`{
+  "questions": [
+    {
+      "question": "Texto da pergunta",
+      "options": ["Opção A", "Opção B", "Opção C", "Opção D"],
+      "correctIndex": 0,
+      "difficulty": "easy | medium | hard",
+      "explanation": "Explicação opcional"
+    }
+  ]
+}`}
+                  </pre>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground mb-1">📝 Prova <code className="bg-muted px-1 rounded text-xs">contentType: "exam"</code></h3>
+                  <pre className="bg-muted rounded-lg p-3 text-xs text-foreground overflow-x-auto whitespace-pre-wrap">
+{`{
+  "questions": [
+    {
+      "question": "Texto da pergunta da prova",
+      "options": ["Opção A", "Opção B", "Opção C", "Opção D"],
+      "correctIndex": 2,
+      "difficulty": "easy | medium | hard",
+      "explanation": "Explicação da resposta"
+    }
+  ]
+}`}
+                  </pre>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground mb-1">🔤 Caça-Palavras <code className="bg-muted px-1 rounded text-xs">contentType: "wordsearch"</code></h3>
+                  <pre className="bg-muted rounded-lg p-3 text-xs text-foreground overflow-x-auto whitespace-pre-wrap">
+{`{
+  "words": [
+    {
+      "word": "MITOSE",
+      "explanation": "Divisão celular que gera duas células idênticas"
+    }
+  ]
+}`}
+                  </pre>
+                </div>
+
+                <div className="bg-muted/50 rounded-lg p-3 border border-border">
+                  <h3 className="text-sm font-semibold text-foreground mb-1">📨 Payload Enviado ao Webhook</h3>
+                  <pre className="text-xs text-muted-foreground whitespace-pre-wrap">
+{`{
+  "action": "generate",
+  "contentType": "flashcards | quiz | exam | wordsearch",
+  "moduleName": "Nome do Módulo",
+  "moduleColor": "primary",
+  "difficulty": "easy | medium | hard | all",
+  "count": 10
+}`}
+                  </pre>
+                </div>
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
