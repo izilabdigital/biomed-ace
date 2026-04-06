@@ -1,22 +1,74 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Flashcard } from '@/data/flashcards';
-import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, RotateCcw, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { sm2, ratingToQuality } from '@/lib/sm2';
+import { useWebhookGenerate } from '@/hooks/useWebhookGenerate';
+
+const MIN_FLASHCARDS = 5;
 
 interface FlashcardViewProps {
   cards: Flashcard[];
   userId: string;
+  moduleFilter?: string;
   onProgressUpdate?: () => void;
 }
 
-export function FlashcardView({ cards, userId, onProgressUpdate }: FlashcardViewProps) {
+export function FlashcardView({ cards, userId, moduleFilter, onProgressUpdate }: FlashcardViewProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [direction, setDirection] = useState(0);
+  const [extraCards, setExtraCards] = useState<Flashcard[]>([]);
+  const [webhookLoading, setWebhookLoading] = useState(false);
+  const { generate } = useWebhookGenerate();
 
-  const card = cards[currentIndex];
+  const allCards = [...cards, ...extraCards];
+
+  // Webhook fallback: generate flashcards if not enough for this module
+  useEffect(() => {
+    const tryGenerate = async () => {
+      if (!moduleFilter || allCards.length >= MIN_FLASHCARDS || webhookLoading) return;
+      setWebhookLoading(true);
+      try {
+        const result = await generate({
+          contentType: 'flashcards',
+          moduleName: moduleFilter,
+          count: MIN_FLASHCARDS - allCards.length,
+        });
+        if (result && Array.isArray(result.flashcards || result)) {
+          const items = result.flashcards || result;
+          const maxId = allCards.length > 0 ? Math.max(...allCards.map(c => c.id)) : 1000;
+          const generated: Flashcard[] = items.map((item: any, i: number) => ({
+            id: maxId + i + 1,
+            module: moduleFilter,
+            moduleColor: item.moduleColor || item.module_color || 'primary',
+            front: item.front || item.question || '',
+            back: item.back || item.answer || '',
+            difficulty: item.difficulty || 'medium',
+          }));
+          setExtraCards(generated);
+        }
+      } catch (err) {
+        console.error('Webhook flashcard generation failed:', err);
+      } finally {
+        setWebhookLoading(false);
+      }
+    };
+    tryGenerate();
+  }, [moduleFilter, cards.length]);
+
+  const card = allCards[currentIndex];
+
+  if (webhookLoading && allCards.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 py-20">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <p className="text-muted-foreground text-sm">Gerando flashcards com IA...</p>
+      </div>
+    );
+  }
+
   if (!card) return null;
 
   const next = () => {
