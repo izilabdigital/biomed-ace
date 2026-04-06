@@ -80,11 +80,15 @@ function generateGrid(words: string[]): { grid: string[][]; placements: Map<stri
   return { grid, placements };
 }
 
+import { useWebhookGenerate } from '@/hooks/useWebhookGenerate';
+import { Loader2 } from 'lucide-react';
+
 interface WordSearchGameProps {
   moduleFilter?: string;
 }
 
 export function WordSearchGame({ moduleFilter }: WordSearchGameProps) {
+  const { generate, generating } = useWebhookGenerate();
   const [allWords, setAllWords] = useState<WordSearchWord[]>([]);
   const [loading, setLoading] = useState(true);
   const [foundWords, setFoundWords] = useState<Set<string>>(new Set());
@@ -96,10 +100,26 @@ export function WordSearchGame({ moduleFilter }: WordSearchGameProps) {
 
   useEffect(() => {
     const fetchWords = async () => {
-      let query = supabase.from('word_search_words').select('*');
-      if (moduleFilter) query = query.eq('module', moduleFilter);
-      const { data } = await query;
-      if (data) setAllWords(data as WordSearchWord[]);
+      if (!moduleFilter) {
+        setLoading(false);
+        return;
+      }
+      
+      const result = await generate({
+        contentType: 'wordsearch',
+        moduleName: moduleFilter,
+        count: 12,
+      });
+
+      if (result?.words && Array.isArray(result.words)) {
+        const webhookWords: WordSearchWord[] = result.words.map((w: any, i: number) => ({
+          id: `webhook-word-${i}`,
+          word: w.word?.toUpperCase() || w.toUpperCase(),
+          explanation: w.explanation || w.word,
+          module: moduleFilter,
+        }));
+        setAllWords(webhookWords);
+      }
       setLoading(false);
     };
     fetchWords();
@@ -183,10 +203,11 @@ export function WordSearchGame({ moduleFilter }: WordSearchGameProps) {
     return null;
   }, [highlightedCells]);
 
-  if (loading) {
+  if (generating || loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-pulse text-muted-foreground">Carregando caça-palavras...</div>
+      <div className="flex flex-col items-center justify-center py-12 gap-4">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <div className="text-muted-foreground">Gerando caça-palavras com IA...</div>
       </div>
     );
   }

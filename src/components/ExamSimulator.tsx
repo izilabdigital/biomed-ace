@@ -37,7 +37,6 @@ function formatTime(seconds: number) {
 }
 
 export function ExamSimulator({ moduleFilter, userId, onProgressUpdate }: ExamSimulatorProps) {
-  const { questions: dynamicExamQuestions } = useDynamicQuestions('exam', moduleFilter);
   const { generate, generating } = useWebhookGenerate();
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
   const [questions, setQuestions] = useState<{ id: any; question: string; options: string[]; correctIndex: number; module: string; difficulty: string; explanation?: string | null }[]>([]);
@@ -70,34 +69,20 @@ export function ExamSimulator({ moduleFilter, userId, onProgressUpdate }: ExamSi
   const startExam = async (diff: Difficulty) => {
     const config = difficultyConfig[diff];
 
-    // Map dynamic exam questions into the same shape
-    const dynamicMapped = dynamicExamQuestions.map(q => ({
-      id: q.id as any,
-      question: q.question_text,
-      options: q.options,
-      correctIndex: q.correct_index,
-      module: q.module,
-      difficulty: q.difficulty,
-      explanation: q.explanation,
-    }));
-
-    let filteredQuestions: typeof dynamicMapped;
-
     const mapStatic = (qs: ReturnType<typeof getQuizQuestions>) =>
       qs.map(q => ({ ...q, explanation: null as string | null }));
 
+    let filteredQuestions: ReturnType<typeof mapStatic> = [];
+
     if (diff === 'all') {
-      const staticQ = mapStatic(getQuizQuestions(config.questions, moduleFilter));
-      filteredQuestions = [...dynamicMapped, ...staticQ].sort(() => Math.random() - 0.5).slice(0, config.questions);
+      filteredQuestions = mapStatic(getQuizQuestions(config.questions, moduleFilter)).sort(() => Math.random() - 0.5).slice(0, config.questions);
     } else {
-      const allDynamic = dynamicMapped.filter(q => q.difficulty === diff);
-      const allStatic = mapStatic(getQuizQuestions(config.questions * 3, moduleFilter)).filter(q => q.difficulty === diff);
-      filteredQuestions = [...allDynamic, ...allStatic].sort(() => Math.random() - 0.5).slice(0, config.questions);
+      filteredQuestions = mapStatic(getQuizQuestions(config.questions * 3, moduleFilter)).filter(q => q.difficulty === diff).sort(() => Math.random() - 0.5).slice(0, config.questions);
 
       if (filteredQuestions.length < config.questions) {
-        const remaining = mapStatic(getQuizQuestions(config.questions * 3, moduleFilter))
-          .filter(q => !filteredQuestions.find(f => f.id === q.id));
-        filteredQuestions = [...filteredQuestions, ...remaining.slice(0, config.questions - filteredQuestions.length)];
+         const remaining = mapStatic(getQuizQuestions(config.questions * 3, moduleFilter))
+           .filter(q => !filteredQuestions.find(f => f.id === q.id));
+         filteredQuestions = [...filteredQuestions, ...remaining.slice(0, config.questions - filteredQuestions.length)];
       }
     }
 

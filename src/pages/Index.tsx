@@ -119,7 +119,7 @@ const Index = () => {
       case 'dashboard':
         return <Dashboard onNavigate={handleNavigate} stats={stats} />;
       case 'flashcards':
-        return <FlashcardView cards={filteredCards} userId={user.id} onProgressUpdate={refreshProfile} />;
+        return <FlashcardView moduleFilter={moduleFilter} userId={user.id} onProgressUpdate={refreshProfile} />;
       case 'quiz':
         return <QuizView moduleFilter={moduleFilter} userId={user.id} onProgressUpdate={refreshProfile} />;
       case 'exam':

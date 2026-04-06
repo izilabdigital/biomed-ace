@@ -24,8 +24,7 @@ interface QuizQuestion {
 }
 
 export function QuizView({ moduleFilter, questionCount = 10, userId, onProgressUpdate }: QuizViewProps) {
-  const { questions: dynamicQuestions, loading: dynamicLoading } = useDynamicQuestions('quiz', moduleFilter);
-  const { generate, generating } = useWebhookGenerate();
+    const { generate, generating } = useWebhookGenerate();
 
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -36,49 +35,22 @@ export function QuizView({ moduleFilter, questionCount = 10, userId, onProgressU
   const [webhookAttempted, setWebhookAttempted] = useState(false);
 
   useEffect(() => {
-    if (dynamicLoading) return;
-
-    const dynamicMapped: QuizQuestion[] = dynamicQuestions.map(q => ({
-      id: q.id,
-      question: q.question_text,
-      options: q.options,
-      correctIndex: q.correct_index,
-      module: q.module,
-      difficulty: q.difficulty,
-      explanation: q.explanation,
-    }));
-
-    if (dynamicMapped.length >= questionCount) {
-      // Enough dynamic questions, use them
-      setQuestions(dynamicMapped.sort(() => Math.random() - 0.5).slice(0, questionCount));
-      return;
-    }
-
-    // If we have some dynamic questions, fill with static
-    const staticQuestions: QuizQuestion[] = getQuizQuestions(questionCount, moduleFilter).map(q => ({
-      id: q.id,
-      question: q.question,
-      options: q.options,
-      correctIndex: q.correctIndex,
-      module: q.module,
-      difficulty: q.difficulty,
-    }));
-
-    const combined = [...dynamicMapped];
-    const remaining = questionCount - combined.length;
-    if (remaining > 0) {
-      combined.push(...staticQuestions.slice(0, remaining));
-    }
-
-    // If still not enough and we have a module filter, try webhook
-    if (combined.length < questionCount && moduleFilter && !webhookAttempted) {
+    if (!webhookAttempted && moduleFilter) {
       setWebhookAttempted(true);
       generateViaWebhook(moduleFilter);
-      return;
+    } else if (!moduleFilter) {
+      // Fallback if no module
+      const staticQuestions: QuizQuestion[] = getQuizQuestions(questionCount, moduleFilter).map(q => ({
+        id: q.id,
+        question: q.question,
+        options: q.options,
+        correctIndex: q.correctIndex,
+        module: q.module,
+        difficulty: q.difficulty,
+      }));
+      setQuestions(staticQuestions.sort(() => Math.random() - 0.5).slice(0, questionCount));
     }
-
-    setQuestions(combined.sort(() => Math.random() - 0.5).slice(0, questionCount));
-  }, [dynamicLoading, dynamicQuestions, questionCount, moduleFilter, webhookAttempted]);
+  }, [questionCount, moduleFilter, webhookAttempted]);
 
   const generateViaWebhook = async (mod: string) => {
     const result = await generate({
@@ -161,7 +133,7 @@ export function QuizView({ moduleFilter, questionCount = 10, userId, onProgressU
     }
   };
 
-  if (dynamicLoading || generating || questions.length === 0) {
+  if (generating || questions.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-4">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />

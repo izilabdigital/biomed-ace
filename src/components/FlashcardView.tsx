@@ -1,23 +1,73 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Flashcard } from '@/data/flashcards';
 import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { sm2, ratingToQuality } from '@/lib/sm2';
 
+import { useWebhookGenerate } from '@/hooks/useWebhookGenerate';
+import { Loader2 } from 'lucide-react';
+
 interface FlashcardViewProps {
-  cards: Flashcard[];
+  moduleFilter?: string;
   userId: string;
   onProgressUpdate?: () => void;
 }
 
-export function FlashcardView({ cards, userId, onProgressUpdate }: FlashcardViewProps) {
+export function FlashcardView({ moduleFilter, userId, onProgressUpdate }: FlashcardViewProps) {
+  const { generate, generating } = useWebhookGenerate();
+  const [cards, setCards] = useState<Flashcard[]>([]);
+  const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [direction, setDirection] = useState(0);
 
+  useEffect(() => {
+    const fetchCards = async () => {
+      // Simulate fetch or fallback if no module selected
+      if (!moduleFilter) {
+        setLoading(false);
+        return;
+      }
+      
+      const result = await generate({
+        contentType: 'flashcards',
+        moduleName: moduleFilter,
+        count: 10,
+      });
+
+      if (result?.flashcards && Array.isArray(result.flashcards)) {
+        const webhookCards: Flashcard[] = result.flashcards.map((c: any, i: number) => ({
+          id: `webhook-card-${i}`,
+          front: c.front,
+          back: c.back,
+          module: moduleFilter,
+          moduleColor: c.moduleColor || 'primary',
+          difficulty: c.difficulty || 'medium',
+        }));
+        setCards(webhookCards);
+      }
+      setLoading(false);
+    };
+
+    fetchCards();
+  }, [moduleFilter]);
+
+  if (generating || loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 gap-4">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <div className="text-muted-foreground">Gerando flashcards com IA...</div>
+      </div>
+    );
+  }
+
   const card = cards[currentIndex];
-  if (!card) return null;
+  if (!card) return (
+    <div className="text-center py-12 text-muted-foreground">
+      Nenhum flashcard disponível para este módulo.
+    </div>
+  );
 
   const next = () => {
     if (currentIndex < cards.length - 1) {
