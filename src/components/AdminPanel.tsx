@@ -489,6 +489,36 @@ export function AdminPanel() {
                   >
                     Restaurar Padrão
                   </button>
+                  <button
+                    disabled={testingWebhook}
+                    onClick={async () => {
+                      setTestingWebhook(true);
+                      try {
+                        const { data, error } = await supabase.functions.invoke('generate-content', {
+                          body: {
+                            contentType: 'flashcards',
+                            moduleName: 'teste',
+                            moduleColor: 'primary',
+                            count: 1,
+                            webhookUrl,
+                          },
+                        });
+                        if (error) throw error;
+                        toast.success('Webhook respondeu com sucesso!');
+                        console.log('Webhook test response:', data);
+                      } catch (err: any) {
+                        console.error('Webhook test error:', err);
+                        toast.error('Erro ao conectar ao webhook: ' + (err.message || 'Sem resposta'));
+                      } finally {
+                        setTestingWebhook(false);
+                      }
+                    }}
+                    className="px-4 py-2 rounded-lg bg-accent text-accent-foreground text-sm font-medium hover:bg-accent/90 transition-colors disabled:opacity-50"
+                  >
+                    {testingWebhook ? (
+                      <span className="flex items-center gap-1"><Loader2 className="w-4 h-4 animate-spin" /> Testando...</span>
+                    ) : 'Testar Conexão'}
+                  </button>
                 </div>
                 <p className="text-xs text-muted-foreground">Padrão: {DEFAULT_WEBHOOK_URL}</p>
               </div>
