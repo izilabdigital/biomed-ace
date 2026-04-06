@@ -68,6 +68,7 @@ export function AdminPanel() {
   const [selectedModuleId, setSelectedModuleId] = useState('');
   // Webhook config
   const [webhookUrl, setWebhookUrl] = useState(getWebhookUrl());
+  const [testingWebhook, setTestingWebhook] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
