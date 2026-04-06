@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Trophy, Sparkles, Info } from 'lucide-react';
+import { Search, Trophy, Sparkles, Info, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useWebhookGenerate } from '@/hooks/useWebhookGenerate';
 
 interface WordSearchWord {
   id: string;
