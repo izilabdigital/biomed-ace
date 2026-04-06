@@ -69,6 +69,10 @@ export function AdminPanel() {
   // Webhook config
   const [webhookUrl, setWebhookUrl] = useState(getWebhookUrl());
   const [testingWebhook, setTestingWebhook] = useState(false);
+  // Manual generation
+  const [genModuleId, setGenModuleId] = useState('');
+  const [genCount, setGenCount] = useState(10);
+  const [generatingType, setGeneratingType] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
