@@ -216,7 +216,7 @@ export function FlashcardView({ cards, userId, moduleFilter, onProgressUpdate }:
 
         <button
           onClick={next}
-          disabled={currentIndex === cards.length - 1}
+          disabled={currentIndex === allCards.length - 1}
           className="p-2 rounded-lg bg-secondary text-secondary-foreground disabled:opacity-30 hover:shadow-card-hover transition-shadow"
         >
           <ChevronRight className="w-5 h-5" />
