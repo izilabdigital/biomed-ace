@@ -155,7 +155,7 @@ export function FlashcardView({ cards, userId, moduleFilter, onProgressUpdate }:
         <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
           <motion.div
             className="h-full bg-primary rounded-full"
-            animate={{ width: `${((currentIndex + 1) / cards.length) * 100}%` }}
+            animate={{ width: `${((currentIndex + 1) / allCards.length) * 100}%` }}
             transition={{ duration: 0.3 }}
           />
         </div>
