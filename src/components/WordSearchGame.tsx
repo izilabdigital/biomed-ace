@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Trophy, Sparkles, Info } from 'lucide-react';
+import { Search, Trophy, Sparkles, Info, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useWebhookGenerate } from '@/hooks/useWebhookGenerate';
 
 interface WordSearchWord {
   id: string;
@@ -91,12 +92,16 @@ export function WordSearchGame({ moduleFilter }: WordSearchGameProps) {
   const { generate, generating } = useWebhookGenerate();
   const [allWords, setAllWords] = useState<WordSearchWord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [webhookLoading, setWebhookLoading] = useState(false);
   const [foundWords, setFoundWords] = useState<Set<string>>(new Set());
   const [selecting, setSelecting] = useState(false);
   const [selectedCells, setSelectedCells] = useState<number[][]>([]);
   const [highlightedCells, setHighlightedCells] = useState<Map<string, number[][]>>(new Map());
   const [showExplanation, setShowExplanation] = useState<string | null>(null);
   const [startCell, setStartCell] = useState<number[] | null>(null);
+  const { generate } = useWebhookGenerate();
+
+  const MIN_WORDS = 6;
 
   useEffect(() => {
     const fetchWords = async () => {
@@ -114,7 +119,7 @@ export function WordSearchGame({ moduleFilter }: WordSearchGameProps) {
       if (result?.words && Array.isArray(result.words)) {
         const webhookWords: WordSearchWord[] = result.words.map((w: any, i: number) => ({
           id: `webhook-word-${i}`,
-          word: w.word?.toUpperCase() || w.toUpperCase(),
+          word: w.word?.toUpperCase().replace(/\s/g, '') || w.toUpperCase().replace(/\s/g, ''),
           explanation: w.explanation || w.word,
           module: moduleFilter,
         }));
@@ -203,11 +208,21 @@ export function WordSearchGame({ moduleFilter }: WordSearchGameProps) {
     return null;
   }, [highlightedCells]);
 
+<<<<<<< HEAD
   if (generating || loading) {
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-4">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
         <div className="text-muted-foreground">Gerando caça-palavras com IA...</div>
+=======
+  if (loading || webhookLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <p className="text-muted-foreground text-sm">
+          {webhookLoading ? 'Gerando palavras com IA...' : 'Carregando caça-palavras...'}
+        </p>
+>>>>>>> 7ab621239c45c5082a5e52c53e4b27140a8d7901
       </div>
     );
   }

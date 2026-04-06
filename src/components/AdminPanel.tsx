@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, FileText, Trash2, Plus, CheckCircle, Loader2, BookOpen, BarChart3, Users, Settings, Layers, Link } from 'lucide-react';
+import { Upload, FileText, Trash2, Plus, CheckCircle, Loader2, BookOpen, BarChart3, Users, Settings, Layers, Link, Sparkles, Brain, HelpCircle, GraduationCap, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -68,6 +68,11 @@ export function AdminPanel() {
   const [selectedModuleId, setSelectedModuleId] = useState('');
   // Webhook config
   const [webhookUrl, setWebhookUrl] = useState(getWebhookUrl());
+  const [testingWebhook, setTestingWebhook] = useState(false);
+  // Manual generation
+  const [genModuleId, setGenModuleId] = useState('');
+  const [genCount, setGenCount] = useState(10);
+  const [generatingType, setGeneratingType] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -177,6 +182,83 @@ export function AdminPanel() {
       toast.error(`Erro ao enviar: ${err.message}`);
     } finally {
       setProcessing(false);
+    }
+  };
+
+  const handleManualGenerate = async (contentType: 'flashcards' | 'quiz' | 'exam' | 'wordsearch') => {
+    const selectedModule = studyModules.find(m => m.id === genModuleId);
+    if (!selectedModule) {
+      toast.error('Selecione um módulo');
+      return;
+    }
+    setGeneratingType(contentType);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-content', {
+        body: {
+          contentType,
+          moduleName: selectedModule.name,
+          moduleColor: selectedModule.color,
+          count: genCount,
+          webhookUrl: getWebhookUrl(),
+        },
+      });
+      if (error) throw error;
+
+      const result = data?.data || data;
+      let savedCount = 0;
+
+      if (contentType === 'flashcards' && result?.flashcards) {
+        for (const fc of result.flashcards) {
+          await supabase.from('dynamic_flashcards').insert({
+            module: selectedModule.name,
+            module_color: selectedModule.color,
+            front: fc.front,
+            back: fc.back,
+            difficulty: fc.difficulty || 'medium',
+            created_by: user?.id || '',
+          });
+          savedCount++;
+        }
+      } else if ((contentType === 'quiz' || contentType === 'exam') && result?.questions) {
+        for (const q of result.questions) {
+          await supabase.from('dynamic_questions').insert({
+            module: selectedModule.name,
+            module_color: selectedModule.color,
+            question_text: q.question,
+            options: q.options,
+            correct_index: q.correctIndex,
+            explanation: q.explanation || '',
+            difficulty: q.difficulty || 'medium',
+            question_type: contentType,
+            created_by: user?.id || '',
+          });
+          savedCount++;
+        }
+      } else if (contentType === 'wordsearch' && result?.words) {
+        for (const w of result.words) {
+          await supabase.from('word_search_words').insert({
+            module: selectedModule.name,
+            module_color: selectedModule.color,
+            word: w.word.toUpperCase(),
+            explanation: w.explanation,
+            created_by: user?.id || '',
+          });
+          savedCount++;
+        }
+      }
+
+      if (savedCount > 0) {
+        toast.success(`${savedCount} itens de "${contentType}" gerados e salvos para "${selectedModule.name}"!`);
+        fetchData();
+      } else {
+        toast.warning('Webhook respondeu mas nenhum item foi salvo. Verifique o formato JSON.');
+        console.log('Webhook response:', result);
+      }
+    } catch (err: any) {
+      console.error('Generate error:', err);
+      toast.error('Erro ao gerar: ' + (err.message || 'Falha na requisição'));
+    } finally {
+      setGeneratingType(null);
     }
   };
 
@@ -488,8 +570,182 @@ export function AdminPanel() {
                   >
                     Restaurar Padrão
                   </button>
+                  <button
+                    disabled={testingWebhook}
+                    onClick={async () => {
+                      setTestingWebhook(true);
+                      try {
+                        const { data, error } = await supabase.functions.invoke('generate-content', {
+                          body: {
+                            contentType: 'flashcards',
+                            moduleName: 'teste',
+                            moduleColor: 'primary',
+                            count: 1,
+                            webhookUrl,
+                          },
+                        });
+                        if (error) throw error;
+                        toast.success('Webhook respondeu com sucesso!');
+                        console.log('Webhook test response:', data);
+                      } catch (err: any) {
+                        console.error('Webhook test error:', err);
+                        toast.error('Erro ao conectar ao webhook: ' + (err.message || 'Sem resposta'));
+                      } finally {
+                        setTestingWebhook(false);
+                      }
+                    }}
+                    className="px-4 py-2 rounded-lg bg-accent text-accent-foreground text-sm font-medium hover:bg-accent/90 transition-colors disabled:opacity-50"
+                  >
+                    {testingWebhook ? (
+                      <span className="flex items-center gap-1"><Loader2 className="w-4 h-4 animate-spin" /> Testando...</span>
+                    ) : 'Testar Conexão'}
+                  </button>
                 </div>
                 <p className="text-xs text-muted-foreground">Padrão: {DEFAULT_WEBHOOK_URL}</p>
+              </div>
+            </div>
+
+            <div className="bg-card rounded-2xl border border-border p-6 shadow-card max-w-xl mt-6">
+              <h2 className="text-lg font-bold text-foreground mb-1">Formatos JSON Esperados do n8n</h2>
+              <p className="text-sm text-muted-foreground mb-4">Configure seu workflow do n8n para retornar os seguintes formatos de acordo com o campo <code className="bg-muted px-1 rounded text-xs">contentType</code> recebido.</p>
+              
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground mb-1">📇 Flashcards <code className="bg-muted px-1 rounded text-xs">contentType: "flashcards"</code></h3>
+                  <pre className="bg-muted rounded-lg p-3 text-xs text-foreground overflow-x-auto whitespace-pre-wrap">
+{`{
+  "flashcards": [
+    {
+      "front": "Pergunta do flashcard",
+      "back": "Resposta do flashcard",
+      "difficulty": "easy | medium | hard",
+      "moduleColor": "primary"
+    }
+  ]
+}`}
+                  </pre>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground mb-1">❓ Quiz <code className="bg-muted px-1 rounded text-xs">contentType: "quiz"</code></h3>
+                  <pre className="bg-muted rounded-lg p-3 text-xs text-foreground overflow-x-auto whitespace-pre-wrap">
+{`{
+  "questions": [
+    {
+      "question": "Texto da pergunta",
+      "options": ["Opção A", "Opção B", "Opção C", "Opção D"],
+      "correctIndex": 0,
+      "difficulty": "easy | medium | hard",
+      "explanation": "Explicação opcional"
+    }
+  ]
+}`}
+                  </pre>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground mb-1">📝 Prova <code className="bg-muted px-1 rounded text-xs">contentType: "exam"</code></h3>
+                  <pre className="bg-muted rounded-lg p-3 text-xs text-foreground overflow-x-auto whitespace-pre-wrap">
+{`{
+  "questions": [
+    {
+      "question": "Texto da pergunta da prova",
+      "options": ["Opção A", "Opção B", "Opção C", "Opção D"],
+      "correctIndex": 2,
+      "difficulty": "easy | medium | hard",
+      "explanation": "Explicação da resposta"
+    }
+  ]
+}`}
+                  </pre>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground mb-1">🔤 Caça-Palavras <code className="bg-muted px-1 rounded text-xs">contentType: "wordsearch"</code></h3>
+                  <pre className="bg-muted rounded-lg p-3 text-xs text-foreground overflow-x-auto whitespace-pre-wrap">
+{`{
+  "words": [
+    {
+      "word": "MITOSE",
+      "explanation": "Divisão celular que gera duas células idênticas"
+    }
+  ]
+}`}
+                  </pre>
+                </div>
+
+                <div className="bg-muted/50 rounded-lg p-3 border border-border">
+                  <h3 className="text-sm font-semibold text-foreground mb-1">📨 Payload Enviado ao Webhook</h3>
+                  <pre className="text-xs text-muted-foreground whitespace-pre-wrap">
+{`{
+  "action": "generate",
+  "contentType": "flashcards | quiz | exam | wordsearch",
+  "moduleName": "Nome do Módulo",
+  "moduleColor": "primary",
+  "difficulty": "easy | medium | hard | all",
+  "count": 10
+}`}
+                  </pre>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-card rounded-2xl border border-border p-6 shadow-card max-w-xl mt-6">
+              <h2 className="text-lg font-bold text-foreground mb-1 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-destructive" />
+                Gerar Conteúdo sob Demanda
+              </h2>
+              <p className="text-sm text-muted-foreground mb-4">Gere flashcards, questões de quiz/prova ou palavras para caça-palavras via IA para o módulo selecionado.</p>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">Módulo</label>
+                  <select
+                    value={genModuleId}
+                    onChange={e => setGenModuleId(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-destructive/50"
+                  >
+                    <option value="">Selecione um módulo</option>
+                    {studyModules.map(mod => (
+                      <option key={mod.id} value={mod.id}>{mod.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">Quantidade</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={50}
+                    value={genCount}
+                    onChange={e => setGenCount(Number(e.target.value))}
+                    className="w-32 px-4 py-2.5 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-destructive/50"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  {([
+                    { type: 'flashcards' as const, label: 'Flashcards', icon: Brain },
+                    { type: 'quiz' as const, label: 'Quiz', icon: HelpCircle },
+                    { type: 'exam' as const, label: 'Prova', icon: GraduationCap },
+                    { type: 'wordsearch' as const, label: 'Caça-Palavras', icon: Search },
+                  ]).map(item => (
+                    <button
+                      key={item.type}
+                      disabled={generatingType !== null || !genModuleId}
+                      onClick={() => handleManualGenerate(item.type)}
+                      className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-border bg-secondary/50 text-foreground font-medium text-sm hover:bg-destructive hover:text-white hover:border-destructive transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {generatingType === item.type ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <item.icon className="w-4 h-4" />
+                      )}
+                      {generatingType === item.type ? 'Gerando...' : `Gerar ${item.label}`}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </motion.div>

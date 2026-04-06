@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Flashcard } from '@/data/flashcards';
-import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, RotateCcw, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { sm2, ratingToQuality } from '@/lib/sm2';
-
 import { useWebhookGenerate } from '@/hooks/useWebhookGenerate';
-import { Loader2 } from 'lucide-react';
 
 interface FlashcardViewProps {
   moduleFilter?: string;
@@ -24,7 +22,6 @@ export function FlashcardView({ moduleFilter, userId, onProgressUpdate }: Flashc
 
   useEffect(() => {
     const fetchCards = async () => {
-      // Simulate fetch or fallback if no module selected
       if (!moduleFilter) {
         setLoading(false);
         return;
@@ -87,7 +84,6 @@ export function FlashcardView({ moduleFilter, userId, onProgressUpdate }: Flashc
 
   const handleRate = async (rating: 'easy' | 'medium' | 'hard') => {
     const quality = ratingToQuality(rating);
-    // Fetch existing progress for SM-2
     const { data: existing } = await supabase
       .from('card_progress')
       .select('easiness_factor, interval_days, repetitions')
@@ -98,7 +94,6 @@ export function FlashcardView({ moduleFilter, userId, onProgressUpdate }: Flashc
     const prev = existing || { easiness_factor: 2.5, interval_days: 0, repetitions: 0 };
     const newState = sm2(quality, prev);
 
-    // Upsert card progress with SM-2 fields
     await supabase.from('card_progress').upsert(
       {
         user_id: userId,
@@ -113,7 +108,6 @@ export function FlashcardView({ moduleFilter, userId, onProgressUpdate }: Flashc
       { onConflict: 'user_id,card_id' }
     );
 
-    // Simple increment via direct update
     const today = new Date().toISOString().split('T')[0];
     const { data: prof } = await supabase.from('profiles').select('cards_reviewed, total_points, current_streak, best_streak, last_study_date').eq('user_id', userId).single();
     if (prof) {
@@ -173,10 +167,10 @@ export function FlashcardView({ moduleFilter, userId, onProgressUpdate }: Flashc
             className="w-full h-full"
           >
             <motion.div
-              animate={{ rotateY: isFlipped ? 180 : 0 }}
-              transition={{ duration: 0.5, type: 'spring', stiffness: 200, damping: 25 }}
-              style={{ transformStyle: 'preserve-3d' }}
-              className="relative w-full h-full"
+               animate={{ rotateY: isFlipped ? 180 : 0 }}
+               transition={{ duration: 0.5, type: 'spring', stiffness: 200, damping: 25 }}
+               style={{ transformStyle: 'preserve-3d' }}
+               className="relative w-full h-full"
             >
               <div className="absolute inset-0 bg-card rounded-2xl shadow-card p-8 flex flex-col items-center justify-center text-center backface-hidden">
                 <span className="text-xs text-muted-foreground uppercase tracking-widest mb-4">Pergunta</span>
